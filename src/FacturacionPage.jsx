@@ -1,9 +1,5 @@
-import { useEffect, useState } from "react"
-import axios from 'axios'
-import { splitStringIntoArray } from "./helpers/functions"
 import { Header } from "./components/Header"
 import { InvoiceForm } from "./components/InvoiceForm"
-import { Summary } from "./components/Summary"
 import { Footer } from "./components/Footer"
 import { InvoiceInfo } from "./components/InvoiceInfo"
 

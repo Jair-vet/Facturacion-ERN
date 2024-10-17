@@ -36,3 +36,7 @@
     height: 40px;
     animation: spin 1s linear infinite;
 }
+
+.campo_sin_editar {
+    @apply bg-gray-300 text-gray-500 cursor-default mt-1 block w-full border border-gray-300 rounded-md p-1 focus:outline-none focus:border-transparent
+}
