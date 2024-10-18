@@ -33,7 +33,7 @@ export const InvoiceForm = () => {
     
     // Datos de facturación
     serie: "",
-    folio: "8109",
+    folio: "",
     metodo_pago: "PUE",
     forma_pago: "03",
     tipo_comprobante: "I",  
@@ -74,9 +74,10 @@ export const InvoiceForm = () => {
         descripcion: "",
         valor_unitario: "", // 657.93
         importe: "", // 2631.72
-        objeto_imp: "02",
         base: "",
-        importe_iva_concepto: "",
+        importe_iva_concepto: '',
+        Importe: '',
+        objeto_imp: "02",
         impuesto: "002",
         tasaOcuota: "0.160000",
         tipoFactor: "Tasa",
@@ -194,6 +195,7 @@ export const InvoiceForm = () => {
           num_acount: result.banco.no_cuenta,
           clabe: result.banco.clabe_inter,
           serie: result.rutas.serie,
+          folio: result.factura.id,
           conceptos: result.salidas.map((salida) => ({
             clave_sat: salida.clave_sat,
             clave_prod: salida.numparte,
@@ -202,12 +204,13 @@ export const InvoiceForm = () => {
             descripcion: salida.descripcion,
             valor_unitario: salida.precio,
             importe: salida.importe,
-            objeto_imp: '02',
             base: salida.importe,
-            importe_iva_concepto: result.salidas.iva_importe,
+            importe_iva_concepto: salida.iva_importe,
+            Importe: salida.importe,
+            objeto_imp: '02',
             impuesto: "002",
             tasaOcuota: "0.160000",
-            tipoFactor: "Tasa"
+            tipoFactor: "Tasa",
             // impuesto: '002',
             // tasaOcuota: '0.16',
             // tipoFactor: 'Tasa',
@@ -221,7 +224,8 @@ export const InvoiceForm = () => {
           metodoPago: result.venta.formapago,
           importe_iva_concepto: result.salidas.iva_importe,
           refpago: result.venta.refpago,
-          cfdi: result.cliente.cfdi
+          cfdi: result.cliente.cfdi,
+          // Importe: result.salidas.iva_importe,
         });
         setSalidas(result.salidas);
         setVenta(result.venta);
@@ -245,9 +249,27 @@ export const InvoiceForm = () => {
         formData
       );
       console.log(response);
-      
+  
       if (response.status === 200) {
-        Swal.fire('Factura Generada', 'La factura se ha generado correctamente', 'success');
+        // Mostrar el Swal y luego ejecutar la descarga al presionar "OK"
+        Swal.fire('Factura Generada', 'La factura se ha generado correctamente', 'success')
+          .then((result) => {
+            if (result.isConfirmed) {
+              // Extraer los paths para el PDF y XML de la respuesta
+              const { path_pdf, path_xml } = response.data;
+  
+              // Generar las URLs completas para la descarga
+              const baseUrl = 'https://sgp-web.nyc3.cdn.digitaloceanspaces.com/sgp-web/pruebas/ern-melaminas/';
+              const pdfUrl = `${baseUrl}${path_pdf}`;
+              const xmlUrl = `${baseUrl}${path_xml}`;
+  
+              // Abrir el PDF en una nueva pestaña
+              openFileInNewTab(pdfUrl);
+  
+              // Opcionalmente, descarga el XML automáticamente
+              // downloadFile(xmlUrl, 'factura.xml');
+            }
+          });
       } else {
         Swal.fire('Error', 'Hubo un problema al generar la factura', 'error');
       }
@@ -257,6 +279,26 @@ export const InvoiceForm = () => {
     } finally {
       setIsLoading(false); // Detener el loader
     }
+  };
+  
+  // Función para abrir archivos en una nueva pestaña
+  const openFileInNewTab = (url) => {
+    const newWindow = window.open(url, '_blank');
+    if (newWindow) {
+      newWindow.focus(); // Asegurarse de que la nueva pestaña tenga el foco
+    } else {
+      Swal.fire('Error', 'No se pudo abrir el archivo en una nueva pestaña', 'error');
+    }
+  };
+  
+  // Función auxiliar para descargar archivos
+  const downloadFile = (url, filename) => {
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   return (
@@ -310,6 +352,7 @@ export const InvoiceForm = () => {
                 type="text"
                 name="razonSocial"
                 value={formData.razonSocial_emisor}
+                onChange={handleChange}
                 className="bg-gray-300 mt-1 block w-full border border-gray-300 rounded-md p-1"
               />
           </div>
@@ -373,9 +416,9 @@ export const InvoiceForm = () => {
               <input
                 type="text"
                 name="metodoPago"
-                value={formData.refpago}
+                defaultValue={formData.refpago}
                 // onChange={handleChange}
-                readOnly
+                // readOnly
                 className="campo_sin_editar"
               />
             </div>
@@ -383,9 +426,9 @@ export const InvoiceForm = () => {
               <label className="text-sm font-medium text-gray-700">Método de Pago:</label>
               <input
                 name="metodoPagoDescripcion"
-                value={formData.metodoPagoDescripcion} 
+                defaultValue={formData.metodoPagoDescripcion} 
                 // onChange={handleChangeMetodoPago} 
-                readOnly
+                // readOnly
                 className="campo_sin_editar"
               >
               </input>
@@ -393,18 +436,18 @@ export const InvoiceForm = () => {
             <div className="col-start-5 col-end-6">
               <label className="block text-sm font-medium text-gray-700  mt-1">Pago:</label>
               <input
-                value={formData.metodoPago2}
+                defaultValue={formData.metodoPago2}
                 type="text"
-                readOnly
+                // readOnly
                 className="campo_sin_editar"
               />
             </div>
             <div className="col-start-6 col-span-2 mt-6">
               <label className="text-sm font-medium text-gray-700"></label>
               <input
-                value={formData.metodoPagoDescripcion2}
+                defaultValue={formData.metodoPagoDescripcion2}
                 type="text"
-                readOnly
+                // readOnly
                 className="campo_sin_editar"
               />
             </div>
@@ -416,7 +459,7 @@ export const InvoiceForm = () => {
               <input
                 type="text"
                 name="email_envio_facturacion"
-                value={formData.email_envio_facturacion}
+                value={formData.correo}
                 onChange={handleChange}
                 className="bg-gray-300 mt-1 block w-full border border-gray-300 rounded-md p-1"
               />
