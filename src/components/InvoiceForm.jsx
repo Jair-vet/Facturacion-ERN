@@ -101,6 +101,7 @@ export const InvoiceForm = () => {
     reference: "",
     refpago: "",
     cfdi: '',
+    cliente: '',
   });
 
   const [isValidated, setIsValidated] = useState(false);
@@ -108,6 +109,9 @@ export const InvoiceForm = () => {
   const [salidas, setSalidas] = useState([]);
   const [venta, setVenta] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isInvoiceGenerated, setIsInvoiceGenerated] = useState(false);
+  const [pdfUrl, setPdf] = useState(false);
+  const [xmlUrl, setXml] = useState(false);
   
   // Separar el cfdi en dos partes
   const cfdiParts = formData.cfdi.split(' ', 2);
@@ -225,6 +229,7 @@ export const InvoiceForm = () => {
           importe_iva_concepto: result.salidas.iva_importe,
           refpago: result.venta.refpago,
           cfdi: result.cliente.cfdi,
+          cliente: result.cliente.empresa
           // Importe: result.salidas.iva_importe,
         });
         setSalidas(result.salidas);
@@ -249,7 +254,7 @@ export const InvoiceForm = () => {
         formData
       );
       console.log(response);
-  
+
       if (response.status === 200) {
         // Mostrar el Swal y luego ejecutar la descarga al presionar "OK"
         Swal.fire('Factura Generada', 'La factura se ha generado correctamente', 'success')
@@ -257,17 +262,22 @@ export const InvoiceForm = () => {
             if (result.isConfirmed) {
               // Extraer los paths para el PDF y XML de la respuesta
               const { path_pdf, path_xml } = response.data;
-  
+
               // Generar las URLs completas para la descarga
               const baseUrl = 'https://sgp-web.nyc3.cdn.digitaloceanspaces.com/sgp-web/pruebas/ern-melaminas/';
               const pdfUrl = `${baseUrl}${path_pdf}`;
               const xmlUrl = `${baseUrl}${path_xml}`;
-  
+
+              setPdf(pdfUrl)
+              setXml(xmlUrl)
+
               // Abrir el PDF en una nueva pestaña
               openFileInNewTab(pdfUrl);
-  
+              
               // Opcionalmente, descarga el XML automáticamente
-              // downloadFile(xmlUrl, 'factura.xml');
+              downloadFile(xmlUrl, 'factura.xml');
+
+              setIsInvoiceGenerated(true); // Marcar que la factura fue generada
             }
           });
       } else {
@@ -299,6 +309,85 @@ export const InvoiceForm = () => {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+  };
+
+  const handleSendInvoiceEmail = async () => {
+    // console.log('Enviando..');
+    
+    setIsLoading(true);
+    try {
+      
+      // Función para convertir un archivo en base64
+      const convertToBase64 = async (url) => {
+        const response = await fetch(url);
+        const blob = await response.blob();
+        
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            resolve(reader.result.split(',')[1]); // Regresa solo la parte Base64
+          };
+          reader.onerror = reject;
+          reader.readAsDataURL(blob);
+        });
+      };
+      // Convertir el PDF y el XML a base64
+      const pdfBase64 = await convertToBase64(pdfUrl);
+      const xmlBase64 = await convertToBase64(xmlUrl);
+  
+      // Preparar los datos para la solicitud
+      const emailData = {
+        to_email: formData.correo, // correo del cliente
+        to_name: formData.razonSocial, // razón social del cliente
+        number_template: 4178982,
+        from_email: "soporte@gruposped.com", // correo de la sucursal
+        from_name: "Factura",
+        vars_submit: {
+          logo: "undefined", // ruta del logotipo de la sucursal
+          Cliente: formData.cliente, // razón social del cliente
+          Emisor: "vacio", // razón social de la sucursal
+          Serie: "F", // serie de la factura
+          Folio:  formData.folio, // folio de la factura
+          correo: "soporte@binteconsulting.com", // correo de la sucursal
+        },
+        more_emails: [],
+        with_copy_emails: [],
+        with_copy_secret_emails: [],
+        subject: "Factura",
+        attachments_files: [
+          {
+            ContentType: "application/pdf",
+            Filename: "factura.pdf",
+            Base64Content: pdfBase64,
+          },
+          {
+            ContentType: "application/xml",
+            Filename: "factura.xml",
+            Base64Content: xmlBase64,
+          },
+        ],
+      };
+
+      // console.log(emailData);
+      
+  
+      // Enviar los datos a la API
+      const emailResponse = await axios.post(
+        'https://developer.binteapi.com:8083/submit-email',
+        emailData
+      );
+  
+      if (emailResponse.status === 200) {
+        Swal.fire('Correo Enviado', 'La factura ha sido enviada correctamente', 'success');
+      } else {
+        Swal.fire('Error', 'Hubo un problema al enviar el correo', 'error');
+      }
+    } catch (error) {
+      const errorMessage = error.response?.data?.message || 'Error al enviar el correo';
+      Swal.fire('Error', errorMessage, 'error');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -475,6 +564,16 @@ export const InvoiceForm = () => {
           >
             {isLoading ? 'Cargando...' : 'Generar Factura'}
           </button>
+          {isInvoiceGenerated && (
+            <button 
+              className="w-full bg-[#365326] text-white px-4 py-2 mt-4 hover:bg-[#3e662a] rounded-3xl uppercase"
+              type="button"
+              onClick={handleSendInvoiceEmail}
+              disabled={isLoading} // Deshabilitar si está cargando
+            >
+              {isLoading ? 'Enviando...' : 'Enviar por Correo'}
+            </button>
+          )}
         </>
       )}
     </form>
