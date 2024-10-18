@@ -3,6 +3,7 @@ import { ItemsTable } from './ItemsTable';
 import { Summary } from './Summary';
 import axios from 'axios';
 import Swal from 'sweetalert2'; // Asegúrate de haber instalado sweetalert2
+import { Loader } from './Loader';
 
 
 export const InvoiceForm = () => {
@@ -19,99 +20,114 @@ export const InvoiceForm = () => {
     metodoPago2: 'PUE', 
     metodoPagoDescripcion: 'EFECTIVO',
     metodoPagoDescripcion2: 'PAGO EN UNA SOLA EXHIBICIÓN',
-    produccion: '',
-    tipo: '',
-    ruta_csd: '',
-    ruta_key: '',
+    Produccion: "NO",
+    type: "tasa16",
+    id_invoice: "", 
+    rutaCSD: "", // SE AGREGA VACIO
+    rutaKEY: "", // SE AGREGA VACIO
     password: '',
-    ruta_xml: '',
-    ruta_pdf: '',
-    ruta_logotipo: '',
-    is_return_paths: '',
-  
-    //datos facturacion
-    serie: '',
-    folio: '',
-    // "metodo_pago": '',
-    // "forma_pago": '', //01 - EFECTIVO 03 - TRANSFERENCIA 04 - TARJETA CREDITO 28 - TARJETA DEBITO
-    tipo_comprobante: '',
-    moneda: '',
-    tipo_cambio: '',
-    lugar_expedicion: '', //CP DE LA SUCURSA''L
-    subtotal: '',
-    total: '',
-    exportacion: '',
+    rutaXML: "",
+    rutaPDF: "",
+    rutaLogotipo: "",
+    is_return_paths: true,
+    
+    // Datos de facturación
+    serie: "",
+    folio: "8109",
+    metodo_pago: "PUE",
+    forma_pago: "03",
+    tipo_comprobante: "I",  
+    moneda: "MXN",
+    tipo_cambio: "1",
+    fecha_expedicion: "",  // SE AGREGA VACIO
+    lugar_expedicion: "",
+    subtotal: "",
+    total: "",
+    exportacion: "01",
 
-    //DATOS DE EMISOR - SUCURSAL
-    // "rfc_emisor": '',
-    razon_social_emisor: '',
-    regimen_fiscal_emisor: '',
-    // "address_emisor": '',
-    //DATOS DEL RECEPTOR - CLIENTE
-    rfc_receptor: '',
-    razon_social_receptor: '',
-    // "uso_cfdi": '',
-    domicilio_fiscal_receptor: '',
-    address_receptor: '',
-    regimen_fiscal_receptor: '',
-    //DATOS DEL BANCO - TABLA MIBANCO
-    bank: '',
-    num_acount: '',
-    clabe: '',
-    //CONCEPTOS
+    // Datos del Emisor - Sucursal
+    rfc_emisor: "",
+    razonSocial_emisor: "", 
+    regimenFiscal_emisor: "",
+    address_emisor: "Calle Ejemplo, 123567",  // PENDIENTE
+
+    // Datos del Receptor - Cliente
+    rfc_receptor: "",
+    razonSocial_receptor: "",
+    usoCFDI: "G03", // SE CAMBIO NOMBRE DE VARIABLE
+    domicilioFiscal_receptor: "",
+    address_receptor: "",
+    regimenFiscal_receptor: "",
+
+    // Datos del Banco - Tabla MiBanco
+    bank: "",
+    num_acount: "",
+    clabe: "",
+
+    // Conceptos
     conceptos: [
-        {
-            clave_sat: '',
-            clave_prod: '',
-            cantidad: '',
-            unidad_sat: '',
-            descripcion: '',
-            valor_unitario: '', //657.93
-            importe: '',
-            objeto_imp: '',
-            base: '',
-            // importe_iva_concepto: '',
-            impuesto: '',
-            tasaOcuota: '',
-            tipoFactor: ''
-        }
+      {
+        clave_sat: "",
+        clave_prod: "",
+        cantidad: "",
+        unidad_sat: "",
+        descripcion: "",
+        valor_unitario: "", // 657.93
+        importe: "", // 2631.72
+        objeto_imp: "02",
+        base: "",
+        importe_iva_concepto: "",
+        impuesto: "002",
+        tasaOcuota: "0.160000",
+        tipoFactor: "Tasa",
+      },
     ],
-    new_concepts: [],
-    //IMPUESTOS
-    base_iva: '', //SUMA TOTAL DE LA BASE DE TODOS LOS CONCEPTOS
-    impuesto_iva: '',
-    impuesto_ieps: '',
-    importe_iva: '', //SUMA TOTAL DEL IVA DE TODOS LOS CONCEPTOS
-    importe_ieps: '',
-    tasa_cuota_iva: '',
-    tipo_factor_iva: '',
-    days: '',
-    date: '',
+
+    newConcepts: [], // SE CAMBIO EL NOMBRE
+
+    // Impuestos
+    Base_iva: "",
+    impuesto_iva: "002",
+    impuesto_ieps: "001",
+    importe_iva: "",
+    importe_ieps: "0.00",
+    tasaOcuota_iva: "0.160000", // SE CAMBIO NOMBRE DE VARIABLE
+    tipoFactor_iva: "Tasa", // SE CAMBIO NOMBRE DE VARIABLE
+
+    // Otros datos
+    days: 0,
+    date: null,
     reference: "",
+    refpago: "",
+    cfdi: '',
   });
 
-  const [isValidated, setIsValidated] = useState(false); // Estado para mostrar u ocultar los otros campos
+  const [isValidated, setIsValidated] = useState(false);
   const [sucursales, setSucursales] = useState([]);
-  const [ventaData, setVentaData] = useState(null);
   const [salidas, setSalidas] = useState([]);
   const [venta, setVenta] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
   
-  // Dividimos `usoCfdi` en dos partes
-  const cfdiParts = formData.usoCfdi.split(' ', 2); 
-  const cfdiCode = cfdiParts[0]; 
-  const cfdiDescription = formData.usoCfdi.substring(cfdiCode.length + 1); 
+  // Separar el cfdi en dos partes
+  const cfdiParts = formData.cfdi.split(' ', 2);
+  const cfdiCode = cfdiParts[0] || ''; 
+  const cfdiDescription = cfdiParts.slice(1).join(' ') || ''; 
 
-  const metodosDePago = [
-    { id: '01', metodo: 'EFECTIVO' },
-    { id: '02', metodo: 'TARJETA' },
-    { id: '03', metodo: 'DEPOSITO' },
-  ];
+  useEffect(() => {
+    setIsLoading(true);
+    const obtenerSucursales = async () => {
+      try {
+        const response = await axios.get('https://binteapi.com:8095/api/sucursales/');
+        setSucursales(response.data);
+      } catch (error) {
+        console.error('Error al cargar las sucursales:', error);
+      }finally {
+        setIsLoading(false); // Detener el loader
+      }
+    };
+    obtenerSucursales();
+  }, []);
 
-  const metodosDePago2 = [
-    { id: 'PUE', metodo: 'PAGO EN UNA SOLA EXHIBICIÓN' },
-  ];
-
-  // Función para manejar el cambio de inputs
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData({
@@ -120,188 +136,134 @@ export const InvoiceForm = () => {
     });
   };
 
-  // Actualización dinámica de CFDI (código y descripción por separado)
   const handleCfdiChange = (e) => {
     const { name, value } = e.target;
-
-    // Actualizamos las partes del CFDI según el input modificado
-    let newCfdiCode = cfdiCode;
+    let newCfdiCode = cfdi;
     let newCfdiDescription = cfdiDescription;
 
-    if (name === 'cfdiCode') {
+    if (name === 'cfdi') {
       newCfdiCode = value;
     } else if (name === 'cfdiDescription') {
       newCfdiDescription = value;
     }
 
-    // Unimos ambos valores en el campo `usoCfdi`
     setFormData({
       ...formData,
-      usoCfdi: `${newCfdiCode} ${newCfdiDescription}`
+      cfdi: `${newCfdiCode} ${newCfdiDescription}`
     });
   };
 
-// 
-//   // Función para manejar cambios en los inputs
-  const handleChangeMetodoPago = (e) => {
-    const selectedMetodo = metodosDePago.find(
-      (metodo) => metodo.metodo === e.target.value
-    );
-    
-    if (selectedMetodo) {
-      setFormData({
-        ...formData,
-        metodoPago: selectedMetodo.id, // Actualiza el ID (01, 02, 03)
-        metodoPagoDescripcion: selectedMetodo.metodo, // Actualiza la descripción (EFECTIVO, TARJETA, etc.)
-      });
-    }
-  };
-
-
-  // useEffect para cargar las sucursales desde la API al montar el componente
-  useEffect(() => {
-    const obtenerSucursales = async () => {
-      try {
-        const response = await axios.get('https://binteapi.com:8095/api/sucursales/');
-        setSucursales(response.data); // la respuesta tiene un array de sucursales
-      } catch (error) {
-        console.error('Error al cargar las sucursales:', error);
-      }
-    };
-
-    obtenerSucursales();
-  }, []);
-
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    // Comprobar si se ha seleccionado una sucursal y si el folio está presente
+    setIsLoading(true);
     if (!formData.sucursal || !formData.folio) {
       Swal.fire('Error', 'Por favor, selecciona una sucursal e ingresa un folio', 'error');
       return;
     }
 
-    // URL construida
     const url = `https://binteapi.com:8095/api/ventas/${formData.sucursal}/${formData.folio}/`;
 
     try {
       const response = await fetch(url, {
-        method: 'GET', // Cambiamos a GET porque es una solicitud para obtener datos
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
       });
 
       const result = await response.json();
-      console.log(result);
-
       if (response.ok) {
-        setIsValidated(true); // Si la validación es exitosa, mostrar los otros campos
-        setVentaData(result); // Guardamos los datos de la venta en el estado
-        Swal.fire('Éxito', 'El folio es válido', 'success');
+        setIsValidated(true);
         setFormData({
           ...formData,
-          // Creación del objeto unificado
-          produccion: "No",
-          tipo: "tasa16",
-          ruta_csd: "",
-          ruta_key: "",
-          password: "12345678a", // Empresa contraseña
-          ruta_xml: `https://sgp-web.nyc3.digitaloceanspaces.com/sgp-web/${result.rutas.url_carpeta_facturacion}XML`,
-          ruta_pdf: `https://sgp-web.nyc3.digitaloceanspaces.com/sgp-web/${result.rutas.url_carpeta_facturacion}PDF`,
-          ruta_logotipo: result.rutas.url_logo,
-          is_return_paths: true,
-        
-          //datos facturacion
-          serie: "F",
-          folio: formData.folio,
-          metodo_pago: "PUE",
-          "forma_pago": "03", //01 - EFECTIVO 03 - TRANSFERENCIA 04 - TARJETA CREDITO 28 - TARJETA DEBITO
-          tipo_comprobante: "I",
-          moneda: "MXN",
-          tipo_cambio: "1",
+          rutaXML: `https://sgp-web.nyc3.digitaloceanspaces.com/sgp-web/${result.rutas.url_carpeta_facturacion}XML`,
+          rutaPDF: `https://sgp-web.nyc3.digitaloceanspaces.com/sgp-web/${result.rutas.url_carpeta_facturacion}PDF`,
+          password: result.empresa.contrasena_csd,
+          rutaLogotipo: result.rutas.url_logo,
           lugar_expedicion: result.empresa.cp,
           subtotal: result.venta.subtotal,
           total: result.venta.total,
-          exportacion: result.venta.exportacion,
-
-          //DATOS DE EMISOR - SUCURSAL
-          rfc_emisor: result.empresa.rfc, 
-          razon_social_emisor: formData.razonSocial,
-          regimen_fiscal_emisor: result.empresa.regimenfiscal,
-          "address_emisor": "Calle Ejemplo, 123567",
-          //DATOS DEL RECEPTOR - CLIENTE
-          rfc_receptor: formData.rfc,  // cliente
-          razon_social_receptor: result.cliente.empresa,
-          "uso_cfdi": "G03",  // Solo el codigo
-          domicilio_fiscal_receptor: formData.cp,
+          rfc_emisor: result.empresa.rfc,
+          razonSocial_emisor: result.empresa.razonsocial,
+          regimenFiscal_emisor: result.empresa.regimenfiscal,
+          rfc_receptor: result.cliente.rfc,
+          razonSocial_receptor: result.cliente.empresa,
+          domicilioFiscal_receptor: result.cliente.cp,
           address_receptor: result.cliente.domicilio,
-          regimen_fiscal_receptor: "612",  // ! regimen fiscal  TODO: Editar
-          //DATOS DEL BANCO - TABLA MIBANCO
+          // usoCFDI: result.cliente.domicilio,
+          regimenFiscal_receptor: '612', 
           bank: result.banco.banco,
           num_acount: result.banco.no_cuenta,
           clabe: result.banco.clabe_inter,
-          //CONCEPTOS
-          conceptos: [
-              {
-                  clave_sat: result.salidas.clave_sat,
-                  clave_prod: result.salidas.numparte,
-                  cantidad: result.salidas.cantidad,
-                  unidad_sat: result.salidas.unidad_sat,
-                  descripcion: result.salidas.descripcion,
-                  valor_unitario: result.salidas.precio, //657.93
-                  importe: result.salidas.importe,
-                  objeto_imp: "02",
-                  base: result.salidas.importe,
-                  // "importe_iva_concepto": "362.99",
-                  impuesto: "002",
-                  tasaOcuota: "0.16",
-                  tipoFactor: "Tasa"
-              }
-          ],
-          new_concepts: [],
-          //IMPUESTOS
-          "base_iva": "2268.72", //SUMA TOTAL DE LA BASE DE TODOS LOS CONCEPTOS todos los importes
-          impuesto_iva: "002",
-          impuesto_ieps: "001",
-          "importe_iva": "362.99", //SUMA TOTAL DEL IVA DE TODOS LOS CONCEPTOS todos los productos
-          importe_ieps: "0.00",
-          tasa_cuota_iva: "0.160000",
-          tipo_factor_iva: "Tasa",
-          days: 0,
-          date: null,
-          reference: "",
-
-          // Rellenar Formulario
-          razonSocial: result.empresa.razonsocial,
-          fiscal: result.empresa.regimenfiscal,
-          rfc: result.empresa.rfc,
-          cp: result.empresa.cp,
-          usoCfdi: '',
+          serie: result.rutas.serie,
+          conceptos: result.salidas.map((salida) => ({
+            clave_sat: salida.clave_sat,
+            clave_prod: salida.numparte,
+            cantidad: salida.cantidad,
+            unidad_sat: salida.unidad_sat,
+            descripcion: salida.descripcion,
+            valor_unitario: salida.precio,
+            importe: salida.importe,
+            objeto_imp: '02',
+            base: salida.importe,
+            importe_iva_concepto: result.salidas.iva_importe,
+            impuesto: "002",
+            tasaOcuota: "0.160000",
+            tipoFactor: "Tasa"
+            // impuesto: '002',
+            // tasaOcuota: '0.16',
+            // tipoFactor: 'Tasa',
+          })),
+          Base_iva: result.venta.subtotal,
+          // impuesto_iva: result.salidas.importe,
+          importe_iva: result.venta.iva,
           correo: result.rutas.email_envio_facturacion,
-          metodoPago: result.venta.formapago, 
-
+          cp: result.empresa.cp,
+          fiscal: result.empresa.regimenfiscal,
+          metodoPago: result.venta.formapago,
+          importe_iva_concepto: result.salidas.iva_importe,
+          refpago: result.venta.refpago,
+          cfdi: result.cliente.cfdi
         });
-
         setSalidas(result.salidas);
         setVenta(result.venta);
+        Swal.fire('Éxito', 'El folio es válido', 'success');
       } else {
-        setIsValidated(false); // Ocultamos los campos si la validación falla
         Swal.fire('Error', result.message || 'El folio no es válido', 'error');
       }
     } catch (error) {
-      setIsValidated(false); // Ocultamos los campos si ocurre un error
       Swal.fire('Error', 'Error al conectar con el servidor', 'error');
-      console.error('Error al conectar:', error);
+    } finally {
+      setIsLoading(false); // Detener el loader
     }
   };
 
-  
   const handleGenerateFactura = async () => {
-  }
+    console.log(formData);
+    setIsLoading(true);
+    try {
+      const response = await axios.post(
+        'https://www.binteapi.com:8085/src/cfdi40.php',
+        formData
+      );
+      console.log(response);
+      
+      if (response.status === 200) {
+        Swal.fire('Factura Generada', 'La factura se ha generado correctamente', 'success');
+      } else {
+        Swal.fire('Error', 'Hubo un problema al generar la factura', 'error');
+      }
+    } catch (error) {
+      const errorMessage = error.response?.data?.message || 'Error al generar la factura';
+      Swal.fire('Error', errorMessage, 'error');
+    } finally {
+      setIsLoading(false); // Detener el loader
+    }
+  };
 
   return (
     <form onSubmit={handleSubmit}>
+      {/* Mostrar el loader */}
+      {isLoading && <div className=" flex justify-center items-center"><Loader /></div>}
+
       {/* Validación de Folio */}
       <div className="grid grid-cols-3 gap-4 mb-1">
         <div>
@@ -332,8 +294,9 @@ export const InvoiceForm = () => {
           <button
             type="submit"
             className="text-white bg-[#365326] shadow-lg p-2 pl-5 pr-5 rounded-3xl text-[12px] uppercase hover:bg-[#3e662a]"
+            disabled={isLoading}
           >
-            Validar
+            {isLoading ? 'Cargando...' : 'Validar'}
           </button>
         </div>
       </div>
@@ -346,7 +309,7 @@ export const InvoiceForm = () => {
               <input
                 type="text"
                 name="razonSocial"
-                value={formData.razonSocial}
+                value={formData.razonSocial_emisor}
                 className="bg-gray-300 mt-1 block w-full border border-gray-300 rounded-md p-1"
               />
           </div>
@@ -356,8 +319,8 @@ export const InvoiceForm = () => {
               <label className="block text-sm font-medium text-gray-700">RFC:</label>
               <input
                 type="text"
-                name="rfc"
-                value={formData.rfc}
+                name="rfc_receptor"
+                value={formData.rfc_receptor}
                 onChange={handleChange}
                 className="bg-gray-300 mt-1 block w-full border border-gray-300 rounded-md p-1"
               />
@@ -382,7 +345,7 @@ export const InvoiceForm = () => {
                 className="bg-gray-300 mt-1 block w-full border border-gray-300 rounded-md p-1"
               />
             </div>
-            <div className="col-start-5 col-end-6 pl-16">
+            <div className="col-start-5 col-end-6">
               <label className="block text-sm font-medium text-gray-700 mt-6"></label>
               <input
                 type="text"
@@ -410,7 +373,7 @@ export const InvoiceForm = () => {
               <input
                 type="text"
                 name="metodoPago"
-                value={formData.metodoPago}
+                value={formData.refpago}
                 // onChange={handleChange}
                 readOnly
                 className="campo_sin_editar"
@@ -465,8 +428,9 @@ export const InvoiceForm = () => {
             className="w-full bg-[#365326] text-white px-4 py-2 mt-4 hover:bg-[#3e662a] rounded-3xl uppercase"
             type="button"
             onClick={handleGenerateFactura}
+            disabled={isLoading}
           >
-            Generar Factura
+            {isLoading ? 'Cargando...' : 'Generar Factura'}
           </button>
         </>
       )}
