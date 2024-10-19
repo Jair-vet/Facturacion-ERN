@@ -102,6 +102,7 @@ export const InvoiceForm = () => {
     refpago: "",
     cfdi: '',
     cliente: '',
+    correo_cliente: ''
   });
 
   const [isValidated, setIsValidated] = useState(false);
@@ -141,21 +142,20 @@ export const InvoiceForm = () => {
     });
   };
 
-  const handleCfdiChange = (e) => {
-    const { name, value } = e.target;
-    let newCfdiCode = cfdi;
-    let newCfdiDescription = cfdiDescription;
-
-    if (name === 'cfdi') {
-      newCfdiCode = value;
-    } else if (name === 'cfdiDescription') {
-      newCfdiDescription = value;
+  const handleCfdiChange = (e, type) => {
+    const { value } = e.target;
+    
+    if (type === 'code') {
+      setFormData({
+        ...formData,
+        cfdi: `${value} ${cfdiDescription}`, // Mantener la descripción existente
+      });
+    } else if (type === 'description') {
+      setFormData({
+        ...formData,
+        cfdi: `${cfdiCode} ${value}`, // Mantener el código existente
+      });
     }
-
-    setFormData({
-      ...formData,
-      cfdi: `${newCfdiCode} ${newCfdiDescription}`
-    });
   };
 
   const handleSubmit = async (e) => {
@@ -229,7 +229,8 @@ export const InvoiceForm = () => {
           importe_iva_concepto: result.salidas.iva_importe,
           refpago: result.venta.refpago,
           cfdi: result.cliente.cfdi,
-          cliente: result.cliente.empresa
+          cliente: result.cliente.empresa,
+          correo_cliente: result.cliente.correo
           // Importe: result.salidas.iva_importe,
         });
         setSalidas(result.salidas);
@@ -337,7 +338,7 @@ export const InvoiceForm = () => {
   
       // Preparar los datos para la solicitud
       const emailData = {
-        to_email: formData.correo, // correo del cliente
+        to_email: formData.correo_cliente, // correo del cliente
         to_name: formData.razonSocial, // razón social del cliente
         number_template: 4178982,
         from_email: "soporte@gruposped.com", // correo de la sucursal
@@ -389,6 +390,9 @@ export const InvoiceForm = () => {
       setIsLoading(false);
     }
   };
+
+  console.log(cfdiCode);
+  
 
   return (
     <form onSubmit={handleSubmit}>
