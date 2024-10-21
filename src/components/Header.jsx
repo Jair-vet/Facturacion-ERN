@@ -11,6 +11,7 @@ export const Header = () => {
             <div>
                 <button 
                     className="text-white bg-[#365326] shadow-lg p-2 pl-5 pr-5 rounded-3xl text-[12px] uppercase hover:bg-[#3e662a]"
+                    onClick={() => window.location.href = "https://lamichoacanamelaminas.com"}
                 >
                     Regresar
                 </button>

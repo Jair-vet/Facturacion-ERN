@@ -10,11 +10,11 @@ export const InvoiceForm = () => {
   const [formData, setFormData] = useState({
     sucursal: '',
     folio: '',
+    correo: '',
     razonSocial: '',
     rfc: '',
-    fiscal: '',
+    regimenFiscal: '',
     cp: '',
-    correo: '',
     metodoPago: '', 
     metodoPago2: 'PUE', 
     metodoPagoDescripcion: 'EFECTIVO',
@@ -164,6 +164,7 @@ export const InvoiceForm = () => {
     setIsLoading(true);
     if (!formData.sucursal || !formData.folio) {
       Swal.fire('Error', 'Por favor, selecciona una sucursal e ingresa un folio', 'error');
+      setIsLoading(false);
       return;
     }
 
@@ -190,8 +191,8 @@ export const InvoiceForm = () => {
           rfc_emisor: result.empresa.rfc,
           razonSocial_emisor: result.empresa.razonsocial,
           regimenFiscal_emisor: result.empresa.regimenfiscal,
-          rfc_receptor: result.cliente.rfc,
-          razonSocial_receptor: result.cliente.empresa,
+          rfc: result.cliente.rfc,
+          razonSocial: result.cliente.empresa,
           domicilioFiscal_receptor: result.cliente.cp,
           address_receptor: result.cliente.domicilio,
           // usoCFDI: result.cliente.domicilio,
@@ -223,15 +224,15 @@ export const InvoiceForm = () => {
           Base_iva: result.venta.subtotal,
           // impuesto_iva: result.salidas.importe,
           importe_iva: result.venta.iva,
-          correo: result.rutas.email_envio_facturacion,
+          correo: result.cliente.correo,
           cp: result.empresa.cp,
-          fiscal: result.empresa.regimenfiscal,
+          regimenFiscal: result.empresa.regimenfiscal,
           metodoPago: result.venta.formapago,
           importe_iva_concepto: result.salidas.iva_importe,
           refpago: result.venta.refpago,
           cfdi: result.cliente.cfdi,
           cliente: result.cliente.empresa,
-          correo_cliente: result.cliente.correo,
+          // correo_cliente: result.cliente.correo,
           usoCfdi: result.cliente.cfdi,
           // Importe: result.salidas.iva_importe,
         });
@@ -422,7 +423,6 @@ export const InvoiceForm = () => {
           <input
             type="text"
             name="folio"
-            value={formData.folio}
             onChange={handleChange}
             className="bg-gray-300 mt-1 block w-full border border-gray-300 rounded-md p-1"
           />
@@ -446,7 +446,7 @@ export const InvoiceForm = () => {
             <input
               type="text"
               name="razonSocial"
-              value={formData.razonSocial_emisor}
+              value={formData.razonSocial}
               onChange={handleChange}
               className="bg-gray-300 mt-1 block w-full border border-gray-300 rounded-md p-1"
             />
@@ -457,8 +457,8 @@ export const InvoiceForm = () => {
               <label className="block text-sm font-medium text-gray-700">RFC:</label>
               <input
                 type="text"
-                name="rfc_receptor"
-                value={formData.rfc_receptor}
+                name="rfc"
+                value={formData.rfc}
                 onChange={handleChange}
                 className="bg-gray-300 mt-1 block w-full border border-gray-300 rounded-md p-1"
               />
@@ -466,9 +466,9 @@ export const InvoiceForm = () => {
             <div className="w-full md:col-start-3 md:col-end-4">
               <label className="block text-sm font-medium text-gray-700">R. Fiscal:</label>
               <input
-                type="text"
-                name="fiscal"
-                value={formData.fiscal}
+                type="number"
+                name="regimenFiscal"
+                value={formData.regimenFiscal}
                 onChange={handleChange}
                 className="bg-gray-300 mt-1 block w-full border border-gray-300 rounded-md p-1"
               />
@@ -476,7 +476,7 @@ export const InvoiceForm = () => {
             <div className="w-full md:col-start-4 md:col-end-5">
               <label className="block text-sm font-medium text-gray-700">C.P.:</label>
               <input
-                type="text"
+                type="number"
                 name="cp"
                 value={formData.cp}
                 onChange={handleChange}
@@ -546,7 +546,7 @@ export const InvoiceForm = () => {
               <label className="block text-sm font-medium text-gray-700">Correo:</label>
               <input
                 type="text"
-                name="email_envio_facturacion"
+                name="correo"
                 value={formData.correo}
                 onChange={handleChange}
                 className="bg-gray-300 mt-1 block w-full border border-gray-300 rounded-md p-1"
