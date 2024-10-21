@@ -55,7 +55,7 @@ export const InvoiceForm = () => {
     razonSocial_receptor: "",
     // !
     usoCFDI: '', // SE CAMBIO NOMBRE DE VARIABLE
-    codigoCDFI: "G03",
+    codigoCDFI: "",
     domicilioFiscal_receptor: "",
     address_receptor: "",
     regimenFiscal_receptor: "",
@@ -120,6 +120,17 @@ export const InvoiceForm = () => {
   const cfdiCode = cfdiParts[0] || ''; 
   const cfdiDescription = cfdiParts.slice(1).join(' ') || ''; 
 
+  const arregloCDFI = [
+    { codigoCDFI: 'G01', cfdi: 'ADQUISICIÓN DE MERCANCIAS' },
+    { codigoCDFI: 'G03', cfdi: 'GASTOS EN GENERAL' },
+    { codigoCDFI: 'I01', cfdi: 'CONSTRUCCIONES' },
+    { codigoCDFI: 'I02', cfdi: 'MOBILIARIO Y EQUIPO DE OFICINA POR INVERSIONES' },
+    { codigoCDFI: 'I03', cfdi: 'EQUIPO DE TRANSPORTE' },
+    { codigoCDFI: 'I04', cfdi: 'EQUIPO DE COMPUTO Y ACCESORIOS' },
+    { codigoCDFI: 'I05', cfdi: 'DADOS, TOQUELES, MOLDES, MATRICES Y HERRAMENTAL' },
+    { codigoCDFI: 'I08', cfdi: 'OTRA MAQUINARIA Y EQUIPO' }
+  ];
+
   useEffect(() => {
     setIsLoading(true);
     const obtenerSucursales = async () => {
@@ -143,19 +154,34 @@ export const InvoiceForm = () => {
     });
   };
 
-  const handleCfdiChange = (e, type) => {
-    const { value } = e.target;
+  // const handleCfdiChange = (e, type) => {
+  //   const { value } = e.target;
+  //   
+  //   if (type === 'code') {
+  //     setFormData({
+  //       ...formData,
+  //       cfdi: `${value} ${cfdiDescription}`, // Mantener la descripción existente
+  //     });
+  //   } else if (type === 'description') {
+  //     setFormData({
+  //       ...formData,
+  //       cfdi: `${cfdiCode} ${value}`, // Mantener el código existente
+  //     });
+  //   }
+  // };
+  const handleCfdiChange = (event) => {
+    const selectedCfdi = event.target.value;
     
-    if (type === 'code') {
-      setFormData({
-        ...formData,
-        cfdi: `${value} ${cfdiDescription}`, // Mantener la descripción existente
-      });
-    } else if (type === 'description') {
-      setFormData({
-        ...formData,
-        cfdi: `${cfdiCode} ${value}`, // Mantener el código existente
-      });
+    // Busca el objeto correspondiente en arregloCDFI según el CFDI seleccionado
+    const selectedItem = arregloCDFI.find(item => item.cfdi === selectedCfdi);
+    
+    // Si se encuentra el item, actualiza formData
+    if (selectedItem) {
+      setFormData((prevFormData) => ({
+        ...prevFormData,
+        codigoCDFI: selectedItem.codigoCDFI, // Actualiza el codigoCDFI correspondiente
+        usoCfdi: selectedCfdi // Actualiza el usoCfdi con el CFDI seleccionado
+      }));
     }
   };
 
@@ -232,9 +258,7 @@ export const InvoiceForm = () => {
           refpago: result.venta.refpago,
           cfdi: result.cliente.cfdi,
           cliente: result.cliente.empresa,
-          // correo_cliente: result.cliente.correo,
-          usoCfdi: result.cliente.cfdi,
-          // Importe: result.salidas.iva_importe,
+          codigoCDFI: 'G01' || '00'
         });
         setSalidas(result.salidas);
         setVenta(result.venta);
@@ -484,24 +508,30 @@ export const InvoiceForm = () => {
               />
             </div>
             <div className="w-full md:col-start-5 md:col-end-6">
-              <label className="block text-sm font-medium text-gray-700">CFDI</label>
+              <label className="block text-sm font-medium text-gray-700">Código CFDI:</label>
               <input
                 type="text"
                 name="cfdiCode"
-                value={formData.codigoCDFI}
-                onChange={handleCfdiChange}
+                value={formData.codigoCDFI} // Se actualiza automáticamente
+                readOnly
                 className="bg-gray-300 mt-1 block w-full border border-gray-300 rounded-md p-1"
               />
             </div>
             <div className="w-full md:col-span-2 md:col-start-6">
-              <label className="block text-sm font-medium text-gray-700">Uso CFDI:</label>
-              <input
-                type="text"
+              <label className="block text-sm font-medium text-gray-700">CFDI</label>
+              <select
                 name="cfdiDescription"
                 value={formData.usoCfdi}
-                onChange={handleCfdiChange}
+                onChange={handleCfdiChange} // Actualiza codigoCDFI al cambiar CFDI
                 className="bg-gray-300 mt-1 block w-full border border-gray-300 rounded-md p-1"
-              />
+              >
+                <option value="" disabled>Selecciona un CFDI</option>
+                {arregloCDFI.map((item) => (
+                  <option key={item.codigoCDFI} value={item.cfdi}>
+                    {item.cfdi}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
         
@@ -513,6 +543,7 @@ export const InvoiceForm = () => {
                 name="metodoPago"
                 defaultValue={formData.refpago}
                 className="campo_sin_editar"
+                readOnly
               />
             </div>
             <div className="w-full md:col-start-2 md:col-end-5">
@@ -521,6 +552,7 @@ export const InvoiceForm = () => {
                 name="metodoPagoDescripcion"
                 defaultValue={formData.metodoPagoDescripcion}
                 className="campo_sin_editar"
+                readOnly
               />
             </div>
             <div className="w-full md:col-start-5 md:col-end-6  hidden md:block">
@@ -529,6 +561,7 @@ export const InvoiceForm = () => {
                 defaultValue={formData.metodoPago2}
                 type="text"
                 className="campo_sin_editar"
+                readOnly
               />
             </div>
             <div className="w-full md:col-start-6 md:col-span-2 mt-6">
@@ -537,6 +570,7 @@ export const InvoiceForm = () => {
                 defaultValue={formData.metodoPagoDescripcion2}
                 type="text"
                 className="campo_sin_editar"
+                readOnly
               />
             </div>
           </div>
