@@ -10,6 +10,7 @@ export const InvoiceForm = () => {
   const [formData, setFormData] = useState({
     sucursal: '',
     folio: '',
+    folioSucursal: '',
     correo: '',
     razonSocial: '',
     rfc: '',
@@ -238,6 +239,7 @@ export const InvoiceForm = () => {
           num_acount: result.banco.no_cuenta,
           clabe: result.banco.clabe_inter,
           serie: result.rutas.serie,
+          folioSucursal: formData.folio,
           folio: result.factura.id,
           conceptos: result.salidas.map((salida) => ({
             clave_sat: salida.clave_sat,
@@ -271,7 +273,7 @@ export const InvoiceForm = () => {
           usoCFDI: validaCFDI,
           usoCfdi: validaCFDI,
           cliente: result.cliente.empresa,
-          codigoCDFI: 'G01' || '00'
+          codigoCDFI: 'G01' || '00',
         });
         setSalidas(result.salidas);
         setVenta(result.venta);
@@ -287,59 +289,51 @@ export const InvoiceForm = () => {
   };
 
   const handleGenerateFactura = async () => {
-    console.log(formData);
     setIsLoading(true);
     try {
-      const response = await axios.post(
-        'https://www.binteapi.com:8085/src/cfdi40.php',
-        formData
-      );
-  
+      const response = await axios.post('https://www.binteapi.com:8085/src/cfdi40.php', formData);
+      
       if (response.status === 200) {
-        // Mostrar el Swal y luego ejecutar la descarga al presionar "OK"
         Swal.fire('Factura Generada', 'La factura se ha generado correctamente', 'success')
           .then(async (result) => {
             if (result.isConfirmed) {
               // Extraer los paths para el PDF, XML y UUID de la respuesta
               const { path_pdf, path_xml, UUID } = response.data;
   
-              // Generar las URLs completas para la descarga
+              // Verificar que los valores existen antes de proceder
+              console.log('PDF Path:', path_pdf);
+              console.log('XML Path:', path_xml);
+              console.log('UUID:', UUID);
+  
               const baseUrl = 'https://sgp-web.nyc3.cdn.digitaloceanspaces.com/sgp-web/pruebas/ern-melaminas/';
               const pdfUrl = `${baseUrl}${path_pdf}`;
               const xmlUrl = `${baseUrl}${path_xml}`;
   
               setPdf(pdfUrl);
               setXml(xmlUrl);
-  
-              // Abrir el PDF en una nueva pestaña
               openFileInNewTab(pdfUrl);
-              
-              // Opcionalmente, descarga el XML automáticamente
               downloadFile(xmlUrl, 'factura.xml');
-  
-              // Marcar que la factura fue generada
               setIsInvoiceGenerated(true);
   
-              // Guardar la factura en la base de datos
               try {
-                const sucursal = formData.sucursal; // Asegúrate de que formData tenga la sucursal
-                const folioTicket = formData.folio_ticket; // Asegúrate de que formData tenga el folio_ticket
+                const sucursal = encodeURIComponent(formData.sucursal.trim());
+                const folioTicket = Number(formData.folioSucursal); // Asegúrate que estás usando formData.folioSucursal
                 const saveFacturaUrl = `https://binteapi.com:8095/api/factura/${sucursal}/${folioTicket}/`;
-  
-                // Hacer la petición para guardar la factura
-                const saveResponse = await axios.post(saveFacturaUrl, {
-                  path_pdf,
-                  path_xml,
+                
+                const saveResponse = await axios.put(saveFacturaUrl, {
+                  path_pdf: `ern-melaminas/${path_pdf}`,
+                  path_xml: `ern-melaminas/${path_xml}`,
                   UUID
                 });
-  
-                if (saveResponse.status === 200) {
+                
+                if (saveResponse.status === 200 && saveResponse.data?.id) {
                   Swal.fire('Factura Guardada', 'La factura ha sido guardada en la base de datos correctamente', 'success');
                 } else {
-                  Swal.fire('Error', 'La factura no se pudo guardar en la base de datos', 'error');
+                  Swal.fire('Error', 'La factura no se pudo guardar en la base de datos o la respuesta no contiene la información esperada', 'error');
                 }
               } catch (saveError) {
-                const saveErrorMessage = saveError.response?.data?.message || 'Error al guardar la factura en la base de datos';
+                const saveErrorMessage = saveError.response?.data?.error || 'Error al guardar la factura en la base de datos';
+                console.error('Error al guardar la factura:', saveErrorMessage);
                 Swal.fire('Error', saveErrorMessage, 'error');
               }
             }
@@ -349,9 +343,10 @@ export const InvoiceForm = () => {
       }
     } catch (error) {
       const errorMessage = error.response?.data?.message || 'Error al generar la factura';
+      console.error('Error en la generación de factura:', errorMessage);
       Swal.fire('Error', errorMessage, 'error');
     } finally {
-      setIsLoading(false); // Detener el loader
+      setIsLoading(false);
     }
   };
   
