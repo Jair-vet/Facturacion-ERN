@@ -301,9 +301,9 @@ export const InvoiceForm = () => {
               const { path_pdf, path_xml, UUID } = response.data;
   
               // Verificar que los valores existen antes de proceder
-              console.log('PDF Path:', path_pdf);
-              console.log('XML Path:', path_xml);
-              console.log('UUID:', UUID);
+              // console.log('PDF Path:', path_pdf);
+              // console.log('XML Path:', path_xml);
+              // console.log('UUID:', UUID);
   
               const baseUrl = 'https://sgp-web.nyc3.cdn.digitaloceanspaces.com/sgp-web/pruebas/ern-melaminas/';
               const pdfUrl = `${baseUrl}${path_pdf}`;
@@ -317,7 +317,7 @@ export const InvoiceForm = () => {
   
               try {
                 const sucursal = encodeURIComponent(formData.sucursal.trim());
-                const folioTicket = Number(formData.folioSucursal); // Asegúrate que estás usando formData.folioSucursal
+                const folioTicket = encodeURIComponent(formData.folioSucursal.trim());
                 const saveFacturaUrl = `https://binteapi.com:8095/api/factura/${sucursal}/${folioTicket}/`;
                 
                 const saveResponse = await axios.put(saveFacturaUrl, {
@@ -396,7 +396,7 @@ export const InvoiceForm = () => {
   
       // Preparar los datos para la solicitud
       const emailData = {
-        to_email: formData.correo_cliente, // correo del cliente
+        to_email: formData.correo, // correo del cliente
         to_name: formData.razonSocial, // razón social del cliente
         number_template: 4178982,
         from_email: "soporte@gruposped.com", // correo de la sucursal
