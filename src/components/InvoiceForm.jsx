@@ -33,7 +33,6 @@ export const InvoiceForm = () => {
     
     // Datos de facturación
     serie: "",
-    folio: "",
     metodo_pago: "PUE",
     forma_pago: "03",
     tipo_comprobante: "I",  
@@ -276,7 +275,9 @@ export const InvoiceForm = () => {
           cliente: result.cliente.empresa,
           codigoCDFI: 'G01' || '00',
           correo_sucursal: result.rutas.email_envio_facturcion
+
         });
+        console.log(correo_sucursal);
         setSalidas(result.salidas);
         setVenta(result.venta);
         Swal.fire('Éxito', 'El folio es válido', 'success');
@@ -289,6 +290,7 @@ export const InvoiceForm = () => {
       setIsLoading(false); // Detener el loader
     }
   };
+  
 
   const handleGenerateFactura = async () => {
     setIsLoading(true);
@@ -401,7 +403,7 @@ export const InvoiceForm = () => {
         to_email: formData.correo, // correo del cliente
         to_name: formData.razonSocial, // razón social del cliente
         number_template: 4178982,
-        from_email: formData.correo_sucursal, // correo de la sucursal
+        from_email: formData.correo, // correo de la sucursal
         from_name: "Factura",
         vars_submit: {
           logo: formData.rutaLogotipo, // ruta del logotipo de la sucursal
@@ -409,7 +411,7 @@ export const InvoiceForm = () => {
           Emisor: formData.razonSocial_emisor, // razón social de la sucursal
           Serie: "F", // serie de la factura
           Folio:  formData.folio, // folio de la factura
-          correo: formData.correo_sucursal, // correo de la sucursal
+          correo: formData.correo, // correo de la sucursal
         },
         more_emails: [],
         with_copy_emails: [],
