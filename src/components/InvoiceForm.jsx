@@ -427,13 +427,18 @@ export const InvoiceForm = () => {
         ],
       };
 
-      // console.log(emailData);
-      
+      // Configurar el encabezado con el access_token
+      const config = {
+        headers: {
+          Authorization: `Bearer iIxMDUxOjM5MSIsInZlciI6IjIuMCIs`, // Access token
+        },
+      };
   
       // Enviar los datos a la API
       const emailResponse = await axios.post(
         'https://developer.binteapi.com:8083/submit-email',
-        emailData
+        emailData,
+        config
       );
   
       if (emailResponse.status === 200) {

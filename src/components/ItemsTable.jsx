@@ -19,8 +19,8 @@ export const ItemsTable = ({ salidas }) => {
               <td className="border border-gray-300 p-2">{item.numparte}</td>
               <td className="border border-gray-300 p-2">{item.descripcion}</td>
               <td className="border border-gray-300 p-2 text-center">{item.cantidad}</td>
-              <td className="border border-gray-300 p-2 text-right">{item.precio.toFixed(2)}</td>
-              <td className="border border-gray-300 p-2 text-right">{item.importe.toFixed(2)}</td>
+              <td className="border border-gray-300 p-2 text-right">${item.precio.toFixed(2)}</td>
+              <td className="border border-gray-300 p-2 text-right">${item.importe.toFixed(2)}</td>
             </tr>
           ))}
         </tbody>
