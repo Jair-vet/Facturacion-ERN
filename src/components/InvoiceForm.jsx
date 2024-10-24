@@ -105,7 +105,8 @@ export const InvoiceForm = () => {
     reference: "",
     refpago: "",
     cliente: '',
-    correo_cliente: ''
+    correo_cliente: '',
+    correo_sucursal: '',
   });
 
   const [isValidated, setIsValidated] = useState(false);
@@ -274,6 +275,7 @@ export const InvoiceForm = () => {
           usoCfdi: validaCFDI,
           cliente: result.cliente.empresa,
           codigoCDFI: 'G01' || '00',
+          correo_sucursal: result.rutas.email_envio_facturcion
         });
         setSalidas(result.salidas);
         setVenta(result.venta);
@@ -399,15 +401,15 @@ export const InvoiceForm = () => {
         to_email: formData.correo, // correo del cliente
         to_name: formData.razonSocial, // razón social del cliente
         number_template: 4178982,
-        from_email: "soporte@gruposped.com", // correo de la sucursal
+        from_email: formData.correo_sucursal, // correo de la sucursal
         from_name: "Factura",
         vars_submit: {
-          logo: "undefined", // ruta del logotipo de la sucursal
+          logo: formData.rutaLogotipo, // ruta del logotipo de la sucursal
           Cliente: formData.cliente, // razón social del cliente
-          Emisor: "vacio", // razón social de la sucursal
+          Emisor: formData.razonSocial_emisor, // razón social de la sucursal
           Serie: "F", // serie de la factura
           Folio:  formData.folio, // folio de la factura
-          correo: "soporte@binteconsulting.com", // correo de la sucursal
+          correo: formData.correo_sucursal, // correo de la sucursal
         },
         more_emails: [],
         with_copy_emails: [],
