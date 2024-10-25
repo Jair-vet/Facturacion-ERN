@@ -116,6 +116,8 @@ export const InvoiceForm = () => {
   const [isInvoiceGenerated, setIsInvoiceGenerated] = useState(false);
   const [pdfUrl, setPdf] = useState(false);
   const [xmlUrl, setXml] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [imageSrc, setImageSrc] = useState('');
 
   // Separar el cfdi en dos partes
   const cfdiParts = formData.cfdi.split(' ', 2);
@@ -156,21 +158,6 @@ export const InvoiceForm = () => {
     });
   };
 
-  // const handleCfdiChange = (e, type) => {
-  //   const { value } = e.target;
-  //   
-  //   if (type === 'code') {
-  //     setFormData({
-  //       ...formData,
-  //       cfdi: `${value} ${cfdiDescription}`, // Mantener la descripción existente
-  //     });
-  //   } else if (type === 'description') {
-  //     setFormData({
-  //       ...formData,
-  //       cfdi: `${cfdiCode} ${value}`, // Mantener el código existente
-  //     });
-  //   }
-  // };
   const handleCfdiChange = (event) => {
     const selectedCfdi = event.target.value;
 
@@ -187,6 +174,16 @@ export const InvoiceForm = () => {
       });
     }
   };
+
+  const handleIconClick = (src) => {
+    setImageSrc(src);
+    setIsModalOpen(true);
+  };
+
+  const closeModal = () => {
+    setIsModalOpen(false);
+  };
+
 
 
   const handleSubmit = async (e) => {
@@ -262,9 +259,6 @@ export const InvoiceForm = () => {
             impuesto: "002",
             tasaOcuota: "0.160000",
             tipoFactor: "Tasa",
-            // impuesto: '002',
-            // tasaOcuota: '0.16',
-            // tipoFactor: 'Tasa',
           })),
           Base_iva: result.venta.subtotal,
           // impuesto_iva: result.salidas.importe,
@@ -307,11 +301,6 @@ export const InvoiceForm = () => {
             if (result.isConfirmed) {
               // Extraer los paths para el PDF, XML y UUID de la respuesta
               const { path_pdf, path_xml, UUID } = response.data;
-  
-              // Verificar que los valores existen antes de proceder
-              // console.log('PDF Path:', path_pdf);
-              // console.log('XML Path:', path_xml);
-              // console.log('UUID:', UUID);
   
               const baseUrl = 'https://sgp-web.nyc3.cdn.digitaloceanspaces.com/sgp-web/pruebas/ern-melaminas/';
               const pdfUrl = `${baseUrl}${path_pdf}`;
@@ -462,7 +451,6 @@ export const InvoiceForm = () => {
     }
   };
 
-  // console.log(cfdiCode);
   
 
   return (
@@ -486,14 +474,32 @@ export const InvoiceForm = () => {
             ))}
           </select>
         </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700">Ingresa folio de ticket:</label>
-          <input
-            type="text"
-            name="folio"
-            onChange={handleChange}
-            className="bg-gray-300 mt-1 block w-full border border-gray-300 rounded-md p-1"
-          />
+        {/* Seleccionar Folio */}
+        <div className='flex gap-2'>
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Ingresa folio de ticket:</label>
+            <input
+              type="text"
+              name="folio"
+              onChange={handleChange}
+              className="bg-gray-300 mt-1 block w-full border border-gray-300 rounded-md p-1"
+            />
+          </div>
+          {/* Círculo de ayuda */}
+          <div className="relative flex items-center justify-center mt-4">
+            {/* Tooltip */}
+            <div className="absolute bg-gray-700 text-white text-xs rounded px-2 py-1 -mt-8 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+              Encuentra el Folio
+            </div>
+            {/* Icono para abrir el modal */}
+            <button
+              type="button"
+              onClick={() => handleIconClick('/factura-ERN/assets/img/Informacio_image.jpeg')}
+              className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center hover:bg-blue-400 focus:outline-none group"
+            >
+              <span className="text-white text-xl">?</span>
+            </button>
+          </div>
         </div>
         <div className="md:mt-0 mt-3 flex justify-center items-center text-sm font-medium">
           <button
@@ -505,6 +511,18 @@ export const InvoiceForm = () => {
           </button>
         </div>
       </div>
+
+      {/* Modal */}
+      {isModalOpen && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50" onClick={closeModal}>
+          <div className="bg-white p-4 rounded-md relative" onClick={(e) => e.stopPropagation()}>
+            <button onClick={closeModal} className="absolute top-[-12px] right-[-12px] text-white bg-red-600 hover:bg-red-700 rounded-full px-3 py-2">
+              X
+            </button>
+            <img src={imageSrc} alt="Modal" className="w-full" />
+          </div>
+        </div>
+      )}
 
       {/* Mostrar los otros campos solo si la validación fue exitosa */}
       <div>
@@ -655,7 +673,7 @@ export const InvoiceForm = () => {
           {isInvoiceGenerated && (
             <>
               <div className='flex justify-center items-center p-10'>
-                <h2 className='text-2xl uppercase text-[#3e662a] font-bold'>La factura fue generada Exitosamente</h2>
+                <h2 className='text-2xl uppercase text-[#3e662a] font-bold'>La factura fué generada Exitosamente</h2>
               </div>
               <div>
                 <button 
