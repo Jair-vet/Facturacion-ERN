@@ -206,6 +206,12 @@ export const InvoiceForm = () => {
         headers: { 'Content-Type': 'application/json' },
       });
 
+      const config = {
+        headers: {
+          Authorization: `Bearer iIxMDUxOjM5MSIsInZlciI6IjIuMCIs`, // Access token
+        },
+      };
+
       const result = await response.json();
       if (response.ok) {
 
@@ -275,9 +281,9 @@ export const InvoiceForm = () => {
           cliente: result.cliente.empresa,
           codigoCDFI: 'G01' || '00',
           correo_sucursal: result.rutas.email_envio_facturcion
-
         });
-        console.log(correo_sucursal);
+
+        
         setSalidas(result.salidas);
         setVenta(result.venta);
         Swal.fire('Éxito', 'El folio es válido', 'success');
@@ -285,7 +291,7 @@ export const InvoiceForm = () => {
         Swal.fire('Error', result.message || 'El folio no es válido', 'error');
       }
     } catch (error) {
-      Swal.fire('Error', 'Error al conectar con el servidor', 'error');
+      Swal.fire('Error',  result.message || 'Error al conectar con el servidor', 'error');
     } finally {
       setIsLoading(false); // Detener el loader
     }
@@ -627,8 +633,11 @@ export const InvoiceForm = () => {
               />
             </div>
           </div>
+
+          {/* Tabla */}
           <ItemsTable salidas={salidas} />
           <Summary venta={venta}/>
+
           <button 
             className="w-full bg-[#365326] text-white px-4 py-2 mt-4 hover:bg-[#3e662a] rounded-3xl uppercase"
             type="button"
