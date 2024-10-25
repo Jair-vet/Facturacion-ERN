@@ -475,8 +475,8 @@ export const InvoiceForm = () => {
           </select>
         </div>
         {/* Seleccionar Folio */}
-        <div className='flex gap-2'>
-          <div>
+        <div className='flex gap-2 w-full'>
+          <div className='w-full'>
             <label className="block text-sm font-medium text-gray-700">Ingresa folio de ticket:</label>
             <input
               type="text"
