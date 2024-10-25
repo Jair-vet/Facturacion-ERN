@@ -339,7 +339,7 @@ export const InvoiceForm = () => {
                 if (saveResponse.status === 200 && saveResponse.data?.id) {
                   Swal.fire('Factura Guardada', 'La factura ha sido guardada en la base de datos correctamente', 'success');
                 } else {
-                  Swal.fire('Error', 'La factura no se pudo guardar en la base de datos o la respuesta no contiene la información esperada', 'error');
+                  Swal.fire('Error', result.message || 'La factura no se pudo guardar en la base de datos o la respuesta no contiene la información esperada', 'error');
                 }
               } catch (saveError) {
                 const saveErrorMessage = saveError.response?.data?.error || 'Error al guardar la factura en la base de datos';
