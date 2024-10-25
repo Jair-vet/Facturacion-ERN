@@ -282,7 +282,6 @@ export const InvoiceForm = () => {
           codigoCDFI: 'G01' || '00',
           correo_sucursal: result.rutas.email_envio_facturcion
         });
-        setFormData({rfc_receptor: rfc})
         setSalidas(result.salidas);
         setVenta(result.venta);
         Swal.fire('Éxito', 'El folio es válido', 'success');
@@ -290,7 +289,7 @@ export const InvoiceForm = () => {
         Swal.fire('Error', result.message || 'El folio no es válido', 'error');
       }
     } catch (error) {
-      Swal.fire('Error',  result.message || 'Error al conectar con el servidor', 'error');
+      Swal.fire('Error',  error.message || 'Error al conectar con el servidor', 'error');
     } finally {
       setIsLoading(false); // Detener el loader
     }
