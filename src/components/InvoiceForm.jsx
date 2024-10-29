@@ -142,7 +142,7 @@ export const InvoiceForm = () => {
         // Obtén la URL actual
         const currentUrl = window.location.href;
         // Extrae la primera palabra después del dominio
-        const pathSegment = currentUrl.split('/')[3]; // Índice 3 después de "https://"
+        const pathSegment = currentUrl.split('/')[2]; // Índice 3 después de "https://"
   
         // Construye la URL de la petición
         const requestUrl = `https://binteapi.com:8095/api/sucursales/${pathSegment}`;
