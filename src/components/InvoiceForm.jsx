@@ -139,16 +139,28 @@ export const InvoiceForm = () => {
     setIsLoading(true);
     const obtenerSucursales = async () => {
       try {
-        const response = await axios.get('https://binteapi.com:8095/api/sucursales/');
+        // Obtén la URL actual
+        const currentUrl = window.location.href;
+        // Extrae la primera palabra después del dominio
+        const pathSegment = currentUrl.split('/')[3]; // Índice 3 después de "https://"
+  
+        // Construye la URL de la petición
+        const requestUrl = `https://binteapi.com:8095/api/sucursales/${pathSegment}`;
+  
+        // Realiza la petición
+        const response = await axios.get(requestUrl);
         setSucursales(response.data);
       } catch (error) {
         console.error('Error al cargar las sucursales:', error);
-      }finally {
+      } finally {
         setIsLoading(false); // Detener el loader
       }
     };
+  
     obtenerSucursales();
   }, []);
+  
+  // https://binteapi.com:8095/api/sucursales/http://localhost:5173/factura-ERN/
 
   const handleChange = (e) => {
     const { name, value } = e.target;

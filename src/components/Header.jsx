@@ -6,7 +6,7 @@ export const Header = () => {
         {/* Logo */}
         <div className='w-full pr-10 pl-10 flex justify-between items-center'>
             <div>
-                <img src="/factura-ERN/assets/img/La-Michoacana.png" alt="logo empresa" />
+                <img src="/factura-ERN/assets/img/La-Michoacana.png" alt="logo empresa"  className='w-64 h-18'/>
             </div>
             <div>
                 <button 
