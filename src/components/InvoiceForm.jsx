@@ -202,10 +202,17 @@ export const InvoiceForm = () => {
     e.preventDefault();
     setIsLoading(true);
     if (!formData.sucursal || !formData.folio) {
-      Swal.fire('Error', 'Por favor, selecciona una sucursal e ingresa un folio', 'error');
+      Swal.fire({
+        title: 'WARNING',
+        text: 'Por favor, selecciona una sucursal e ingresa un folio',
+        icon: 'warning',
+        iconColor: '#4782f6', // Color azul para el icono
+        confirmButtonColor: '#007bff', // Color azul para el botón de confirmación
+      });
       setIsLoading(false);
       return;
     }
+    
 
     const url = `https://binteapi.com:8095/api/ventas/${formData.sucursal}/${formData.folio}/`;
 
@@ -292,10 +299,22 @@ export const InvoiceForm = () => {
         setVenta(result.venta);
         Swal.fire('Éxito', 'El folio es válido', 'success');
       } else {
-        Swal.fire('Error', result.message || 'El folio no es válido', 'error');
+        Swal.fire({
+          title: 'WARNING',
+          text: result.error || 'El folio no es válido',
+          icon: 'warning',
+          iconColor: '#4782f6', 
+          confirmButtonColor: '#007bff', 
+        });
       }
     } catch (error) {
-      Swal.fire('Error',  error.message || 'Error al conectar con el servidor', 'error');
+      Swal.fire({
+        title: 'UPPPS!!',
+        text: error.message || 'Error al conectar con el servidor',
+        icon: 'WARNING',
+        iconColor: '#4782f6', 
+        confirmButtonColor: '#007bff', 
+      });
     } finally {
       setIsLoading(false); // Detener el loader
     }
@@ -338,12 +357,24 @@ export const InvoiceForm = () => {
                 if (saveResponse.status === 200 && saveResponse.data?.id) {
                   Swal.fire('Factura Guardada', 'La factura ha sido guardada en la base de datos correctamente', 'success');
                 } else {
-                  Swal.fire('Error', result.message || 'La factura no se pudo guardar en la base de datos o la respuesta no contiene la información esperada', 'error');
+                  Swal.fire({
+                    title: 'UPPPS!!',
+                    text: result.message || 'Error al guardar la factura en la base de datos',
+                    icon: 'WARNING',
+                    iconColor: '#4782f6', 
+                    confirmButtonColor: '#007bff', 
+                  });
                 }
               } catch (saveError) {
                 const saveErrorMessage = saveError.response?.data?.error || 'Error al guardar la factura en la base de datos';
                 console.error('Error al guardar la factura:', saveErrorMessage);
-                Swal.fire('Error', saveErrorMessage, 'error');
+                Swal.fire({
+                  title: 'UPPPS!!',
+                  text: saveErrorMessage,
+                  icon: 'WARNING',
+                  iconColor: '#4782f6', 
+                  confirmButtonColor: '#007bff', 
+                });
               }
             }
           });
@@ -353,7 +384,13 @@ export const InvoiceForm = () => {
     } catch (error) {
       const errorMessage = error.response?.data?.message || 'Error al generar la factura';
       console.error('Error en la generación de factura:', errorMessage);
-      Swal.fire('Error', errorMessage, 'error');
+      Swal.fire({
+        title: 'UPPPS!!',
+        text: errorMessage,
+        icon: 'WARNING',
+        iconColor: '#4782f6', 
+        confirmButtonColor: '#007bff', 
+      });
     } finally {
       setIsLoading(false);
     }
@@ -365,7 +402,13 @@ export const InvoiceForm = () => {
     if (newWindow) {
       newWindow.focus(); // Asegurarse de que la nueva pestaña tenga el foco
     } else {
-      Swal.fire('Error', 'No se pudo abrir el archivo en una nueva pestaña', 'error');
+      Swal.fire({
+        title: 'UPPPS!!',
+        text: 'No se pudo abrir el archivo en una nueva pestaña',
+        icon: 'WARNING',
+        iconColor: '#4782f6', 
+        confirmButtonColor: '#007bff', 
+      });
     }
   };
   
@@ -453,11 +496,25 @@ export const InvoiceForm = () => {
       if (emailResponse.status === 200) {
         Swal.fire('Correo Enviado', 'La factura ha sido enviada correctamente', 'success');
       } else {
-        Swal.fire('Error', 'Hubo un problema al enviar el correo', 'error');
+        const errorMessage = response.response.Messages[0].Errors[0].ErrorMessage.replace(/\"\" /, '');
+        Swal.fire({
+          title: 'UPPPS!!',
+          text: errorMessage, // Mensaje sin las comillas
+          icon: 'warning',
+          iconColor: '#4782f6',
+          confirmButtonColor: '#007bff'
+        });
       }
     } catch (error) {
-      const errorMessage = error.response?.data?.message || 'Error al enviar el correo';
-      Swal.fire('Error', errorMessage, 'error');
+      // const errorMessage = error.response?.data?.message || 'Error al enviar el correo';
+      const errorMessage = response.response.Messages[0].Errors[0].ErrorMessage.replace(/\"\" /, '');
+      Swal.fire({
+        title: 'UPPPS!!',
+        text: errorMessage, // Mensaje sin las comillas
+        icon: 'warning',
+        iconColor: '#4782f6',
+        confirmButtonColor: '#007bff'
+      });
     } finally {
       setIsLoading(false);
     }
