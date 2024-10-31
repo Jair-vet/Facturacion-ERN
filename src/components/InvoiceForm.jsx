@@ -302,7 +302,7 @@ export const InvoiceForm = () => {
       } else {
         Swal.fire({
           title: 'WARNING',
-          text: result.error || 'El folio no es válido',
+          text: result.error || result.warning ||'El folio no es válido',
           icon: 'warning',
           iconColor: '#4782f6', 
           confirmButtonColor: '#007bff', 
