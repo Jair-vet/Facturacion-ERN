@@ -146,6 +146,7 @@ export const InvoiceForm = () => {
   
         // Construye la URL de la petición
         const requestUrl = `https://binteapi.com:8095/api/sucursales/${pathSegment}`;
+        // const requestUrl = `https://binteapi.com:8095/api/sucursales/melpromelaminas.com`;
   
         // Realiza la petición
         const response = await axios.get(requestUrl);
@@ -339,7 +340,7 @@ export const InvoiceForm = () => {
   
               setPdf(pdfUrl);
               setXml(xmlUrl);
-              openFileInNewTab(pdfUrl);
+              // openFileInNewTab(pdfUrl);
               downloadFile(xmlUrl, 'factura.xml');
               setIsInvoiceGenerated(true);
   
@@ -539,7 +540,7 @@ export const InvoiceForm = () => {
           >
             <option value="">Selecciona una sucursal</option>
             {sucursales.map((sucursal) => (
-              <option key={sucursal.id} value={sucursal.nombre}>{sucursal.nombre}</option>
+              <option key={sucursal.id} value={sucursal.nombre_ciudad}>{sucursal.nombre_ciudad}</option>
             ))}
           </select>
         </div>
