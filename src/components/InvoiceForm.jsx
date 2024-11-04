@@ -18,7 +18,7 @@ export const InvoiceForm = () => {
     cp: '',
     metodoPago: '', 
     metodoPago2: 'PUE', 
-    metodoPagoDescripcion: 'EFECTIVO',
+    metodoPagoDescripcion: '',
     metodoPagoDescripcion2: 'PAGO EN UNA SOLA EXHIBICIÓN',
     Produccion: "NO",
     type: "tasa16",
@@ -294,7 +294,8 @@ export const InvoiceForm = () => {
           usoCfdi: validaCFDI,
           cliente: result.cliente.empresa,
           codigoCDFI: 'G01' || '00',
-          correo_sucursal: result.rutas.email_envio_facturcion
+          correo_sucursal: result.rutas.email_envio_facturcion,
+          metodoPagoDescripcion: result.venta.formapago
         });
         setSalidas(result.salidas);
         setVenta(result.venta);
