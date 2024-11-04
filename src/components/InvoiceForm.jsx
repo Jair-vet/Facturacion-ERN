@@ -341,6 +341,7 @@ export const InvoiceForm = () => {
               setPdf(pdfUrl);
               setXml(xmlUrl);
               // openFileInNewTab(pdfUrl);
+              downloadFile(pdfUrl, 'factura.pdf');
               downloadFile(xmlUrl, 'factura.xml');
               setIsInvoiceGenerated(true);
   
