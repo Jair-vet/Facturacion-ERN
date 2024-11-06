@@ -284,8 +284,8 @@ export const InvoiceForm = () => {
           // impuesto_iva: result.salidas.importe,
           importe_iva: result.venta.iva,
           correo: result.cliente.correo,
-          cp: result.empresa.cp,
-          regimenFiscal: result.empresa.regimenfiscal,
+          cp: result.cliente.cp,
+          regimenFiscal: result.cliente.regimenfiscal,
           metodoPago: result.venta.formapago,
           importe_iva_concepto: result.salidas.iva_importe,
           refpago: result.venta.refpago,
@@ -400,20 +400,20 @@ export const InvoiceForm = () => {
   };
   
   // Función para abrir archivos en una nueva pestaña
-  const openFileInNewTab = (url) => {
-    const newWindow = window.open(url, '_blank');
-    if (newWindow) {
-      newWindow.focus(); // Asegurarse de que la nueva pestaña tenga el foco
-    } else {
-      Swal.fire({
-        title: 'UPPPS!!',
-        text: 'No se pudo abrir el archivo en una nueva pestaña',
-        icon: 'WARNING',
-        iconColor: '#4782f6', 
-        confirmButtonColor: '#007bff', 
-      });
-    }
-  };
+  // const openFileInNewTab = (url) => {
+  //   const newWindow = window.open(url, '_blank');
+  //   if (newWindow) {
+  //     newWindow.focus(); // Asegurarse de que la nueva pestaña tenga el foco
+  //   } else {
+  //     Swal.fire({
+  //       title: 'UPPPS!!',
+  //       text: 'No se pudo abrir el archivo en una nueva pestaña',
+  //       icon: 'WARNING',
+  //       iconColor: '#4782f6', 
+  //       confirmButtonColor: '#007bff', 
+  //     });
+  //   }
+  // };
   
   // Función auxiliar para descargar archivos
   const downloadFile = (url, filename) => {
