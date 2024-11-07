@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { ItemsTable } from './ItemsTable';
 import { Summary } from './Summary';
 import axios from 'axios';
-import Swal from 'sweetalert2'; // Asegúrate de haber instalado sweetalert2
 import { Loader } from './Loader';
+import { UsoCFDI } from './UsoCFDI';
+import { handleSubmit, handleGenerateFactura, handleSendInvoiceEmail, initializeCfdi } from '../helpers/helpers';
 
 
 export const InvoiceForm = () => {
@@ -54,9 +55,11 @@ export const InvoiceForm = () => {
     rfc_receptor: "",
     razonSocial_receptor: "",
     // !
-    usoCFDI: '',
+    codigoCFDI: '',
     cfdi: '',
-    codigoCDFI: '',
+    cfdiCode: '',
+    cfdiDescription: '',
+    usoCFDI: '',
     usoCfdi: '',
     domicilioFiscal_receptor: "",
     address_receptor: "",
@@ -118,22 +121,7 @@ export const InvoiceForm = () => {
   const [xmlUrl, setXml] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [imageSrc, setImageSrc] = useState('');
-
-  // Separar el cfdi en dos partes
-  const cfdiParts = formData.cfdi.split(' ', 2);
-  const cfdiCode = cfdiParts[0] || ''; 
-  const cfdiDescription = cfdiParts.slice(1).join(' ') || ''; 
-
-  const arregloCDFI = [
-    { codigoCDFI: 'G01', cfdi: 'ADQUISICIÓN DE MERCANCIAS' },
-    { codigoCDFI: 'G03', cfdi: 'GASTOS EN GENERAL' },
-    { codigoCDFI: 'I01', cfdi: 'CONSTRUCCIONES' },
-    { codigoCDFI: 'I02', cfdi: 'MOBILIARIO Y EQUIPO DE OFICINA POR INVERSIONES' },
-    { codigoCDFI: 'I03', cfdi: 'EQUIPO DE TRANSPORTE' },
-    { codigoCDFI: 'I04', cfdi: 'EQUIPO DE COMPUTO Y ACCESORIOS' },
-    { codigoCDFI: 'I05', cfdi: 'DADOS, TOQUELES, MOLDES, MATRICES Y HERRAMENTAL' },
-    { codigoCDFI: 'I08', cfdi: 'OTRA MAQUINARIA Y EQUIPO' },
-  ];
+  const [codigoCFDI, setCodigoCFDI] = useState('');
 
   useEffect(() => {
     setIsLoading(true);
@@ -160,6 +148,7 @@ export const InvoiceForm = () => {
   
     obtenerSucursales();
   }, []);
+
   
   // https://binteapi.com:8095/api/sucursales/http://localhost:5173/factura-ERN/
 
@@ -171,22 +160,26 @@ export const InvoiceForm = () => {
     });
   };
 
-  const handleCfdiChange = (event) => {
-    const selectedCfdi = event.target.value;
-
-    // Encuentra el CFDI seleccionado en el arreglo
-    const selectedItem = arregloCDFI.find(item => item.cfdi === selectedCfdi);
-    
-    if (selectedItem) {
-      setFormData({
-        ...formData,
-        usoCFDI: selectedItem.codigoCDFI,
-        usoCfdi: selectedItem.codigoCDFI,
-        cfdi: selectedItem.cfdi,
-        codigoCDFI: selectedItem.codigoCDFI
-      });
-    }
+  const handleCodigoCFDIUpdate = (nuevoCodigoCFDI) => {
+    setCodigoCFDI(nuevoCodigoCFDI);
   };
+
+  // useEffect(() => {
+  //   if (formData.codigoCFDI && formData.codigoCFDI !== formData.cfdiCode) {
+  //     setFormData(prevState => ({
+  //       ...prevState,
+  //       cfdiCode: formData.codigoCFDI,
+  //       usoCFDI: formData.codigoCFDI,
+  //       usoCfdi: formData.codigoCFDI,
+  //     }));
+  //   }
+  // }, [formData.codigoCFDI]);
+
+  // useEffect(() => {
+  //   console.log(formData);
+  //   
+  // }, [formData]);
+ 
 
   const handleIconClick = (src) => {
     setImageSrc(src);
@@ -196,337 +189,10 @@ export const InvoiceForm = () => {
   const closeModal = () => {
     setIsModalOpen(false);
   };
-
-
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setIsLoading(true);
-    if (!formData.sucursal || !formData.folio) {
-      Swal.fire({
-        title: 'WARNING',
-        text: 'Por favor, selecciona una sucursal e ingresa un folio',
-        icon: 'warning',
-        iconColor: '#4782f6', // Color azul para el icono
-        confirmButtonColor: '#007bff', // Color azul para el botón de confirmación
-      });
-      setIsLoading(false);
-      return;
-    }
-    
-
-    const url = `https://binteapi.com:8095/api/ventas/${formData.sucursal}/${formData.folio}/`;
-
-    try {
-      const response = await fetch(url, {
-        method: 'GET',
-        headers: { 'Content-Type': 'application/json' },
-      });
-
-      const config = {
-        headers: {
-          Authorization: `Bearer iIxMDUxOjM5MSIsInZlciI6IjIuMCIs`, // Access token
-        },
-      };
-
-      const result = await response.json();
-      if (response.ok) {
-
-        // Validar si result.cliente.cfdi tiene valor
-        const validaCFDI = result.cliente.cfdi && arregloCDFI.includes(result.cliente.cfdi) ? result.cliente.cfdi : 'G01';
-
-        const codigoCDFI = result.cliente.cfdi || 'G01';
-        
-
-        setIsValidated(true);
-        setFormData({
-          ...formData,
-          rutaXML: `https://sgp-web.nyc3.digitaloceanspaces.com/sgp-web/${result.rutas.url_carpeta_facturacion}XML`,
-          rutaPDF: `https://sgp-web.nyc3.digitaloceanspaces.com/sgp-web/${result.rutas.url_carpeta_facturacion}PDF`,
-          password: result.empresa.contrasena_csd,
-          rutaLogotipo: result.rutas.url_logo,
-          lugar_expedicion: result.empresa.cp,
-          subtotal: result.venta.subtotal,
-          total: result.venta.total,
-          rfc_emisor: result.empresa.rfc,
-          rfc_receptor: result.cliente.rfc,
-          razonSocial_emisor: result.empresa.razonsocial,
-          razonSocial_receptor: result.cliente.empresa,
-          regimenFiscal_emisor: result.empresa.regimenfiscal,
-          rfc: result.cliente.rfc,
-          razonSocial: result.cliente.empresa,
-          domicilioFiscal_receptor: result.cliente.cp,
-          address_receptor: result.cliente.domicilio,
-          regimenFiscal_receptor: '612', 
-          bank: result.banco.banco,
-          num_acount: result.banco.no_cuenta,
-          clabe: result.banco.clabe_inter,
-          serie: result.rutas.serie,
-          folioSucursal: formData.folio,
-          folio: result.factura.id,
-          conceptos: result.salidas.map((salida) => ({
-            clave_sat: salida.clave_sat,
-            clave_prod: salida.numparte,
-            cantidad: salida.cantidad,
-            unidad_sat: salida.unidad_sat,
-            descripcion: salida.descripcion,
-            valor_unitario: salida.precio,
-            importe: salida.importe,
-            base: salida.importe,
-            importe_iva_concepto: salida.iva_importe,
-            Importe: salida.importe,
-            objeto_imp: '02',
-            impuesto: "002",
-            tasaOcuota: "0.160000",
-            tipoFactor: "Tasa",
-          })),
-          Base_iva: result.venta.subtotal,
-          // impuesto_iva: result.salidas.importe,
-          importe_iva: result.venta.iva,
-          correo: result.cliente.correo,
-          cp: result.cliente.cp,
-          regimenFiscal: result.cliente.regimenfiscal,
-          metodoPago: result.venta.formapago,
-          importe_iva_concepto: result.salidas.iva_importe,
-          refpago: result.venta.refpago,
-          cfdi: result.cliente.cfdi || '',
-          usoCFDI: validaCFDI,
-          usoCfdi: validaCFDI,
-          cliente: result.cliente.empresa,
-          codigoCDFI: 'G01' || '00',
-          correo_sucursal: result.rutas.email_envio_facturcion,
-          metodoPagoDescripcion: result.venta.formapago
-        });
-        setSalidas(result.salidas);
-        setVenta(result.venta);
-        Swal.fire('Éxito', 'El folio es válido', 'success');
-      } else {
-        Swal.fire({
-          title: 'WARNING',
-          text: result.error || result.warning ||'El folio no es válido',
-          icon: 'warning',
-          iconColor: '#4782f6', 
-          confirmButtonColor: '#007bff', 
-        });
-      }
-    } catch (error) {
-      Swal.fire({
-        title: 'UPPPS!!',
-        text: error.message || 'Error al conectar con el servidor',
-        icon: 'WARNING',
-        iconColor: '#4782f6', 
-        confirmButtonColor: '#007bff', 
-      });
-    } finally {
-      setIsLoading(false); // Detener el loader
-    }
-  };
-  
-
-  const handleGenerateFactura = async () => {
-    setIsLoading(true);
-    try {
-      const response = await axios.post('https://www.binteapi.com:8085/src/cfdi40.php', formData);
-      
-      if (response.status === 200) {
-        Swal.fire('Factura Generada', 'La factura se ha generado correctamente', 'success')
-          .then(async (result) => {
-            if (result.isConfirmed) {
-              // Extraer los paths para el PDF, XML y UUID de la respuesta
-              const { path_pdf, path_xml, UUID } = response.data;
-  
-              const baseUrl = 'https://sgp-web.nyc3.cdn.digitaloceanspaces.com/sgp-web/pruebas/ern-melaminas/';
-              const pdfUrl = `${baseUrl}${path_pdf}`;
-              const xmlUrl = `${baseUrl}${path_xml}`;
-  
-              setPdf(pdfUrl);
-              setXml(xmlUrl);
-              // openFileInNewTab(pdfUrl);
-              downloadFile(pdfUrl, 'factura.pdf');
-              downloadFile(xmlUrl, 'factura.xml');
-              setIsInvoiceGenerated(true);
-  
-              try {
-                const sucursal = encodeURIComponent(formData.sucursal.trim());
-                const folioTicket = encodeURIComponent(formData.folioSucursal.trim());
-                const saveFacturaUrl = `https://binteapi.com:8095/api/factura/${sucursal}/${folioTicket}/`;
-                
-                const saveResponse = await axios.put(saveFacturaUrl, {
-                  path_pdf: `ern-melaminas/${path_pdf}`,
-                  path_xml: `ern-melaminas/${path_xml}`,
-                  UUID
-                });
-                
-                if (saveResponse.status === 200 && saveResponse.data?.id) {
-                  Swal.fire('Factura Guardada', 'La factura ha sido guardada en la base de datos correctamente', 'success');
-                } else {
-                  Swal.fire({
-                    title: 'UPPPS!!',
-                    text: result.message || 'Error al guardar la factura en la base de datos',
-                    icon: 'WARNING',
-                    iconColor: '#4782f6', 
-                    confirmButtonColor: '#007bff', 
-                  });
-                }
-              } catch (saveError) {
-                const saveErrorMessage = saveError.response?.data?.error || 'Error al guardar la factura en la base de datos';
-                console.error('Error al guardar la factura:', saveErrorMessage);
-                Swal.fire({
-                  title: 'UPPPS!!',
-                  text: saveErrorMessage,
-                  icon: 'WARNING',
-                  iconColor: '#4782f6', 
-                  confirmButtonColor: '#007bff', 
-                });
-              }
-            }
-          });
-      } else {
-        Swal.fire('Error', 'Hubo un problema al generar la factura', 'error');
-      }
-    } catch (error) {
-      const errorMessage = error.response?.data?.message || 'Error al generar la factura';
-      console.error('Error en la generación de factura:', errorMessage);
-      Swal.fire({
-        title: 'UPPPS!!',
-        text: errorMessage,
-        icon: 'WARNING',
-        iconColor: '#4782f6', 
-        confirmButtonColor: '#007bff', 
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-  
-  // Función para abrir archivos en una nueva pestaña
-  // const openFileInNewTab = (url) => {
-  //   const newWindow = window.open(url, '_blank');
-  //   if (newWindow) {
-  //     newWindow.focus(); // Asegurarse de que la nueva pestaña tenga el foco
-  //   } else {
-  //     Swal.fire({
-  //       title: 'UPPPS!!',
-  //       text: 'No se pudo abrir el archivo en una nueva pestaña',
-  //       icon: 'WARNING',
-  //       iconColor: '#4782f6', 
-  //       confirmButtonColor: '#007bff', 
-  //     });
-  //   }
-  // };
-  
-  // Función auxiliar para descargar archivos
-  const downloadFile = (url, filename) => {
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = filename;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
-
-  const handleSendInvoiceEmail = async () => {
-    // console.log('Enviando..');
-    
-    setIsLoading(true);
-    try {
-      
-      // Función para convertir un archivo en base64
-      const convertToBase64 = async (url) => {
-        const response = await fetch(url);
-        const blob = await response.blob();
-        
-        return new Promise((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onloadend = () => {
-            resolve(reader.result.split(',')[1]); // Regresa solo la parte Base64
-          };
-          reader.onerror = reject;
-          reader.readAsDataURL(blob);
-        });
-      };
-      // Convertir el PDF y el XML a base64
-      const pdfBase64 = await convertToBase64(pdfUrl);
-      const xmlBase64 = await convertToBase64(xmlUrl);
-  
-      // Preparar los datos para la solicitud
-      const emailData = {
-        to_email: formData.correo, // correo del cliente
-        to_name: formData.razonSocial, // razón social del cliente
-        number_template: 4178982,
-        from_email: formData.correo, // correo de la sucursal
-        from_name: "Factura",
-        vars_submit: {
-          logo: formData.rutaLogotipo, // ruta del logotipo de la sucursal
-          Cliente: formData.cliente, // razón social del cliente
-          Emisor: formData.razonSocial_emisor, // razón social de la sucursal
-          Serie: "F", // serie de la factura
-          Folio:  formData.folio, // folio de la factura
-          correo: formData.correo, // correo de la sucursal
-        },
-        more_emails: [],
-        with_copy_emails: [],
-        with_copy_secret_emails: [],
-        subject: "Factura",
-        attachments_files: [
-          {
-            ContentType: "application/pdf",
-            Filename: "factura.pdf",
-            Base64Content: pdfBase64,
-          },
-          {
-            ContentType: "application/xml",
-            Filename: "factura.xml",
-            Base64Content: xmlBase64,
-          },
-        ],
-      };
-
-      // Configurar el encabezado con el access_token
-      const config = {
-        headers: {
-          Authorization: `Bearer iIxMDUxOjM5MSIsInZlciI6IjIuMCIs`, // Access token
-        },
-      };
-  
-      // Enviar los datos a la API
-      const emailResponse = await axios.post(
-        'https://developer.binteapi.com:8083/submit-email',
-        emailData,
-        config
-      );
-  
-      if (emailResponse.status === 200) {
-        Swal.fire('Correo Enviado', 'La factura ha sido enviada correctamente', 'success');
-      } else {
-        const errorMessage = response.response.Messages[0].Errors[0].ErrorMessage.replace(/\"\" /, '');
-        Swal.fire({
-          title: 'UPPPS!!',
-          text: errorMessage, // Mensaje sin las comillas
-          icon: 'warning',
-          iconColor: '#4782f6',
-          confirmButtonColor: '#007bff'
-        });
-      }
-    } catch (error) {
-      // const errorMessage = error.response?.data?.message || 'Error al enviar el correo';
-      const errorMessage = response.response.Messages[0].Errors[0].ErrorMessage.replace(/\"\" /, '');
-      Swal.fire({
-        title: 'UPPPS!!',
-        text: errorMessage, // Mensaje sin las comillas
-        icon: 'warning',
-        iconColor: '#4782f6',
-        confirmButtonColor: '#007bff'
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   
 
   return (
-    <form onSubmit={handleSubmit}>
+    <form onSubmit={(e) => handleSubmit(e, formData, setIsLoading, setIsValidated, setFormData, setSalidas, setVenta, initializeCfdi)}>
       {/* Mostrar el loader */}
       {isLoading && <div className=" flex justify-center items-center"><Loader /></div>}
 
@@ -644,36 +310,18 @@ export const InvoiceForm = () => {
                   className="bg-gray-300 mt-1 block w-full border border-gray-300 rounded-md p-1"
                 />
               </div>
+            
+              <UsoCFDI 
+                codigoCFDI={formData.codigoCFDI}
+                usoCFDI={formData.usoCFDI}
+                cfdi={formData.cfdi}
+                setFormData={setFormData}
+                onUpdateCodigoCFDI={handleCodigoCFDIUpdate}
+              />
 
-              <div className="w-full md:col-start-5 md:col-end-6">
-                <label className="block text-sm font-medium text-gray-700">Código CFDI:</label>
-                <input
-                  type="text"
-                  name="cfdiCode"
-                  value={formData.codigoCDFI || ''} // Se actualiza automáticamente con el código CFDI seleccionado
-                  readOnly
-                  className="bg-gray-300 mt-1 block w-full border border-gray-300 rounded-md p-1"
-                />
-              </div>
 
-              <div className="w-full md:col-span-2 md:col-start-6">
-                <label className="block text-sm font-medium text-gray-700">Selecciona el CFDI:</label>
-                <select
-                  name="cfdi"
-                  value={formData.cfdi}
-                  onChange={handleCfdiChange}
-                  className="bg-gray-300 mt-1 block w-full border border-gray-300 rounded-md p-1"
-                >
-                  <option value="">Seleccionar...</option>
-                  {arregloCDFI.map((item) => (
-                    <option key={item.codigoCDFI} value={item.cfdi}>
-                      {item.cfdi}
-                    </option>
-                  ))}
-                </select>
-              </div>
             </div>
-          
+
             <div className="parent grid grid-cols-1 md:grid-cols-7 gap-x-1 gap-y-0">
               <div className="w-full md:col-span-1 hidden md:block">
                 <label className="block text-sm font-medium text-gray-700 mt-7"></label>
@@ -734,7 +382,14 @@ export const InvoiceForm = () => {
             <button 
               className="w-full bg-[#365326] text-white px-4 py-2 mt-4 hover:bg-[#3e662a] rounded-3xl uppercase"
               type="button"
-              onClick={handleGenerateFactura}
+              onClick={() => handleGenerateFactura(
+                formData, 
+                setIsLoading, 
+                setFormData, 
+                setPdf, 
+                setXml, 
+                setIsInvoiceGenerated
+              )}
               disabled={isLoading}
             >
               {isLoading ? 'Cargando...' : 'Generar Factura'}
@@ -751,7 +406,12 @@ export const InvoiceForm = () => {
                 <button 
                   className="w-full bg-[#365326] text-white px-4 py-2 mt-4 hover:bg-[#3e662a] rounded-3xl uppercase"
                   type="button"
-                  onClick={handleSendInvoiceEmail}
+                  onClick={() => handleSendInvoiceEmail(
+                    formData, 
+                    pdfUrl, 
+                    xmlUrl, 
+                    setIsLoading
+                  )}
                   disabled={isLoading}
                 >
                   {isLoading ? 'Enviando...' : 'Enviar por Correo'}
