@@ -175,11 +175,16 @@ export const InvoiceForm = () => {
   //   }
   // }, [formData.codigoCFDI]);
 
-  // useEffect(() => {
-  //   console.log(formData);
-  //   
-  // }, [formData]);
- 
+  useEffect(() => {
+    setFormData(prevData => ({ ...prevData, folio: '' }));
+  }, []);
+
+  useEffect(() => {
+    // Limpiar el campo de folio cuando se genera la factura
+    if (isInvoiceGenerated) {
+      setFormData(prevData => ({ ...prevData, folio: '' }));
+    }
+  }, [isInvoiceGenerated]);
 
   const handleIconClick = (src) => {
     setImageSrc(src);

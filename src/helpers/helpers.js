@@ -84,8 +84,8 @@ export const initializeCfdi = (clienteCfdi, setFormData) => {
         setIsValidated(true);
         setFormData({
             ...formData,  // Mantener los valores anteriores
-            rutaXML: `https://sgp-web.nyc3.digitaloceanspaces.com/sgp-web/${result.rutas.url_carpeta_facturacion}XML`,
-            rutaPDF: `https://sgp-web.nyc3.digitaloceanspaces.com/sgp-web/${result.rutas.url_carpeta_facturacion}PDF`,
+            rutaXML: `https://sgp-web.nyc3.digitaloceanspaces.com/sgp-web/${result.rutas.url_carpeta_facturacion}`,
+            rutaPDF: `https://sgp-web.nyc3.digitaloceanspaces.com/sgp-web/${result.rutas.url_carpeta_facturacion}`,
             password: result.empresa.contrasena_csd,
             rutaLogotipo: result.rutas.url_logo,
             lugar_expedicion: result.empresa.cp,
@@ -138,7 +138,9 @@ export const initializeCfdi = (clienteCfdi, setFormData) => {
             cfdiCode: validaCFDI,
             cliente: result.cliente.empresa,
             correo_sucursal: result.rutas.email_envio_facturcion,
-            metodoPagoDescripcion: result.venta.formapago
+            metodoPagoDescripcion: result.venta.formapago,
+            url_carpeta_facturacion: result.rutas.url_carpeta_facturacion,
+            factura: result.factura.factura
         });
   
         // Guardar las salidas y la venta
@@ -186,8 +188,8 @@ export const handleGenerateFactura = async (
 ) => {
   setIsLoading(true);
   
+  let baseUrl = `https://sgp-web.nyc3.cdn.digitaloceanspaces.com/sgp-web/${formData.url_carpeta_facturacion}/${formData.factura}`
   try {
-     
     const response = await axios.post('https://www.binteapi.com:8085/src/cfdi40.php', formData);
     
     if (response.status === 200) {
@@ -196,9 +198,9 @@ export const handleGenerateFactura = async (
           if (result.isConfirmed) {
             // Extraer los paths para el PDF, XML y UUID de la respuesta
             const { path_pdf, path_xml, UUID } = response.data;
-            const baseUrl = 'https://sgp-web.nyc3.cdn.digitaloceanspaces.com/sgp-web/pruebas/ern-melaminas/';
-            const pdfUrl = `${baseUrl}${path_pdf}`;
-            const xmlUrl = `${baseUrl}${path_xml}`;
+            // const baseUrl = 'https://sgp-web.nyc3.cdn.digitaloceanspaces.com/sgp-web/';
+            const pdfUrl = `${baseUrl}.pdf`;
+            const xmlUrl = `${baseUrl}.xml`;
 
             setPdf(pdfUrl);
             setXml(xmlUrl);
