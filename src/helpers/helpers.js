@@ -37,9 +37,9 @@ export const initializeCfdi = (clienteCfdi, setFormData) => {
     }
 };
 
-  
 
-  export const handleSubmit = async ( e, formData, setIsLoading, setIsValidated, setFormData, setSalidas, setVenta,initializeCfdi
+
+export const handleSubmit = async ( e, formData, setIsLoading, setIsValidated, setFormData, setSalidas, setVenta,initializeCfdi
   ) => {
     const arregloCDFI = [
         { codigoCFDI: 'G01', cfdi: 'ADQUISICIÓN DE MERCANCIAS' },
@@ -51,8 +51,8 @@ export const initializeCfdi = (clienteCfdi, setFormData) => {
         { codigoCFDI: 'I05', cfdi: 'DADOS, TOQUELES, MOLDES, MATRICES Y HERRAMENTAL' },
         { codigoCFDI: 'I08', cfdi: 'OTRA MAQUINARIA Y EQUIPO' },
     ];
-    e.preventDefault(); // Prevenir el comportamiento por defecto del formulario
-    setIsLoading(true);  // Mostrar el loader
+    e.preventDefault(); 
+    setIsLoading(true); 
     
     // Validación inicial para verificar si los campos son válidos
     if (!formData.sucursal || !formData.folio) {
@@ -60,11 +60,11 @@ export const initializeCfdi = (clienteCfdi, setFormData) => {
         title: 'WARNING',
         text: 'Por favor, selecciona una sucursal e ingresa un folio',
         icon: 'warning',
-        iconColor: '#4782f6', // Color azul para el icono
-        confirmButtonColor: '#007bff', // Color azul para el botón de confirmación
+        iconColor: '#4782f6', 
+        confirmButtonColor: '#007bff',
       });
-      setIsLoading(false); // Detener el loader en caso de error
-      return; // Salir de la función si la validación falla
+      setIsLoading(false); 
+      return; 
     }
   
     const url = `https://binteapi.com:8095/api/ventas/${formData.sucursal}/${formData.folio}/`;
@@ -83,9 +83,9 @@ export const initializeCfdi = (clienteCfdi, setFormData) => {
         // Validación de la respuesta y actualización del estado
         setIsValidated(true);
         setFormData({
-            ...formData,  // Mantener los valores anteriores
-            rutaXML: `https://sgp-web.nyc3.digitaloceanspaces.com/sgp-web/${result.rutas.url_carpeta_facturacion}`,
+            ...formData,  
             rutaPDF: `https://sgp-web.nyc3.digitaloceanspaces.com/sgp-web/${result.rutas.url_carpeta_facturacion}`,
+            rutaXML: `https://sgp-web.nyc3.digitaloceanspaces.com/sgp-web/${result.rutas.url_carpeta_facturacion}`,
             password: result.empresa.contrasena_csd,
             rutaLogotipo: result.rutas.url_logo,
             lugar_expedicion: result.empresa.cp,
@@ -132,7 +132,7 @@ export const initializeCfdi = (clienteCfdi, setFormData) => {
             importe_iva_concepto: result.salidas.iva_importe,
             refpago: result.venta.refpago,
             cfdi: result.cliente.cfdi,
-            codigoCFDI: result.cliente.codigoCFDI || '', // Asignar el valor de código CFDI si está disponible
+            codigoCFDI: result.cliente.codigoCFDI || '', 
             usoCFDI: validaCFDI,
             usoCfdi: validaCFDI,
             cfdiCode: validaCFDI,
@@ -142,15 +142,26 @@ export const initializeCfdi = (clienteCfdi, setFormData) => {
             url_carpeta_facturacion: result.rutas.url_carpeta_facturacion,
             factura: result.factura.factura
         });
-  
+
         // Guardar las salidas y la venta
         setSalidas(result.salidas);
         setVenta(result.venta);
         
+        // Descargar el PDF y XML automáticamente
+        if (result.rutas.url_carpeta_facturacion) {
+          await downloadPDF(
+            `https://sgp-web.nyc3.digitaloceanspaces.com/sgp-web/${result.rutas.url_carpeta_facturacion}.pdf`,
+            `Factura_${formData.folio}.pdf`
+          );
+          await downloadPDF(
+            `https://sgp-web.nyc3.digitaloceanspaces.com/sgp-web/${result.rutas.url_carpeta_facturacion}.xml`,
+            `Factura_${formData.folio}.xml`
+          );
+        }
+
         // Mensaje de éxito
         Swal.fire('Éxito', 'El folio es válido', 'success');
       } else {
-        // En caso de error en la respuesta
         Swal.fire({
           title: 'WARNING',
           text: result.error || result.warning || 'El folio no es válido',
@@ -160,7 +171,6 @@ export const initializeCfdi = (clienteCfdi, setFormData) => {
         });
       }
     } catch (error) {
-      // Manejo de errores
       Swal.fire({
         title: 'UPPPS!!',
         text: error.message || 'Error al conectar con el servidor',
@@ -169,12 +179,36 @@ export const initializeCfdi = (clienteCfdi, setFormData) => {
         confirmButtonColor: '#007bff',
       });
     } finally {
-      // Detener el loader en cualquier caso
       setIsLoading(false);
     }
 };
   
+export const downloadPDF = async (fileUrl, fileName) => {
+  try {
+    const response = await fetch(fileUrl);
+    if (!response.ok) {
+      throw new Error('No se pudo descargar el archivo. Verifica la URL.');
+    }
 
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = fileName;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.URL.revokeObjectURL(url);
+  } catch (error) {
+    Swal.fire({
+      title: 'ERROR',
+      text: error.message || 'Hubo un problema al descargar el archivo.',
+      icon: 'error',
+      iconColor: '#f27474',
+      confirmButtonColor: '#007bff',
+    });
+  }
+};
 
 
 
