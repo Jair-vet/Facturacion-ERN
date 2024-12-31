@@ -4,6 +4,7 @@ import { Summary } from './Summary';
 import axios from 'axios';
 import { Loader } from './Loader';
 import { UsoCFDI } from './UsoCFDI';
+import Swal from 'sweetalert2';
 import { handleSubmit, handleGenerateFactura, handleSendInvoiceEmail, initializeCfdi } from '../helpers/helpers';
 
 
@@ -122,6 +123,8 @@ export const InvoiceForm = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [imageSrc, setImageSrc] = useState('');
   const [codigoCFDI, setCodigoCFDI] = useState('');
+  const [errors, setErrors] = useState({});
+
 
   useEffect(() => {
     setIsLoading(true);
@@ -232,7 +235,7 @@ export const InvoiceForm = () => {
           </div>
           {/* Círculo de ayuda */}
           <div className="relative flex items-center justify-center mt-4">
-            {/* Tooltip */}
+            {/* Tooltip  */}
             <div className="absolute bg-gray-700 text-white text-xs rounded px-2 py-1 -mt-8 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
               Encuentra el Folio
             </div>
@@ -255,7 +258,7 @@ export const InvoiceForm = () => {
             {isLoading ? 'Cargando...' : 'Validar'}
           </button>
         </div>
-      </div>
+      </div> 
 
       {/* Modal */}
       {isModalOpen && (
@@ -404,21 +407,28 @@ export const InvoiceForm = () => {
           </div>
         )}
         <div>
-          {isInvoiceGenerated && (
+        {isInvoiceGenerated && (
             <>
               <div className='flex justify-center items-center p-10'>
-                <h2 className='text-2xl uppercase text-[#3e662a] font-bold'>La factura fué generada Exitosamente</h2>
+                <h2 className='text-2xl uppercase text-[#3e662a] font-bold'>La factura fue generada Exitosamente</h2>
               </div>
+
+              {/* Botón para Descargar PDF */}
               <div>
-                <button 
+                <button
+                  className="w-full bg-[#365326] text-white px-4 py-2 mt-4 hover:bg-[#3e662a] rounded-3xl uppercase"
+                  onClick={() => window.open(pdfUrl, '_blank')}
+                >
+                  Descargar Factura
+                </button>
+              </div>
+
+              {/* Botón para Enviar por Correo */}
+              <div>
+                <button
                   className="w-full bg-[#365326] text-white px-4 py-2 mt-4 hover:bg-[#3e662a] rounded-3xl uppercase"
                   type="button"
-                  onClick={() => handleSendInvoiceEmail(
-                    formData, 
-                    pdfUrl, 
-                    xmlUrl, 
-                    setIsLoading
-                  )}
+                  onClick={() => handleSendInvoiceEmail(formData, pdfUrl, xmlUrl, setIsLoading)}
                   disabled={isLoading}
                 >
                   {isLoading ? 'Enviando...' : 'Enviar por Correo'}

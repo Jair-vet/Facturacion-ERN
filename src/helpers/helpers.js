@@ -218,9 +218,36 @@ export const handleGenerateFactura = async (
   setFormData, 
   setPdf, 
   setXml, 
-  setIsInvoiceGenerated
+  setIsInvoiceGenerated,
+  setFacturaGenerada,
 ) => {
   setIsLoading(true);
+
+
+  // Validar que el correo sea obligatorio
+  if (!formData.correo || !formData.correo.trim()) {
+    Swal.fire({
+      icon: 'error',
+      title: 'Correo obligatorio',
+      text: 'Por favor, ingresa un correo electrónico válido.',
+      confirmButtonText: 'Aceptar',
+      timer: 3000,
+    });
+    setIsLoading(false);
+    return;
+  }
+
+  if (!formData.sucursal || !formData.folio) {
+    Swal.fire({
+      title: 'WARNING',
+      text: 'Por favor, selecciona una sucursal e ingresa un folio',
+      icon: 'warning',
+      iconColor: '#4782f6',
+      confirmButtonColor: '#007bff',
+    });
+    setIsLoading(false);
+    return;
+  }
   
   let baseUrl = `https://sgp-web.nyc3.cdn.digitaloceanspaces.com/sgp-web/${formData.url_carpeta_facturacion}/${formData.factura}`
   try {
@@ -235,21 +262,15 @@ export const handleGenerateFactura = async (
             // const baseUrl = 'https://sgp-web.nyc3.cdn.digitaloceanspaces.com/sgp-web/';
             const pdfUrl = `${baseUrl}.pdf`;
             const xmlUrl = `${baseUrl}.xml`;
-
-            const downloadFile = (url, filename) => {
-              const link = document.createElement('a');
-              link.href = url;
-              link.download = filename;
-              document.body.appendChild(link);
-              link.click();
-              document.body.removeChild(link);
-            };
             
             setPdf(pdfUrl);
             setXml(xmlUrl);
+
             // openFileInNewTab(pdfUrl);
             downloadFile(pdfUrl, 'factura.pdf');
             downloadFile(xmlUrl, 'factura.xml');
+            setFacturaGenerada(result.facturaUrl);
+            console.log(result);
             setIsInvoiceGenerated(true);
 
             try {
