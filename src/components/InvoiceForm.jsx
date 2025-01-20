@@ -6,6 +6,16 @@ import { Loader } from './Loader';
 import { UsoCFDI } from './UsoCFDI';
 import Swal from 'sweetalert2';
 
+const arregloCDFI = [
+  { codigoCFDI: 'G01', cfdi: 'ADQUISICIÓN DE MERCANCIAS' },
+  { codigoCFDI: 'G03', cfdi: 'GASTOS EN GENERAL' },
+  { codigoCFDI: 'I01', cfdi: 'CONSTRUCCIONES' },
+  { codigoCFDI: 'I02', cfdi: 'MOBILIARIO Y EQUIPO DE OFICINA POR INVERSIONES' },
+  { codigoCFDI: 'I03', cfdi: 'EQUIPO DE TRANSPORTE' },
+  { codigoCFDI: 'I04', cfdi: 'EQUIPO DE COMPUTO Y ACCESORIOS' },
+  { codigoCFDI: 'I05', cfdi: 'DADOS, TOQUELES, MOLDES, MATRICES Y HERRAMENTAL' },
+  { codigoCFDI: 'I08', cfdi: 'OTRA MAQUINARIA Y EQUIPO' },
+];
 
 export const InvoiceForm = () => {
 
@@ -97,9 +107,7 @@ export const InvoiceForm = () => {
     correo_sucursal: '',
   };
 
-
   const [formData, setFormData] = useState(initialState);
-  
   const [isValidated, setIsValidated] = useState(false);
   const [sucursales, setSucursales] = useState([]);
   const [salidas, setSalidas] = useState([]);
@@ -113,12 +121,13 @@ export const InvoiceForm = () => {
   const [imageSrc, setImageSrc] = useState('');
   const [codigoCFDI, setCodigoCFDI] = useState('');
   const [errors, setErrors] = useState({});
+  const [cfdi, setCfdi] = useState('');
 
 
+  // Va por las sucursales segun la url 
   useEffect(() => {
     setIsLoading(true);
     const obtenerSucursales = async () => {
-      console.log('Datos a Enviar', formData);
       try {
         // Obtén la URL actual
         const currentUrl = window.location.href;
@@ -143,43 +152,54 @@ export const InvoiceForm = () => {
 
 
   const initializeCfdi = (clienteCfdi, setFormData) => {
-      const arregloCDFI = [
-          { codigoCFDI: 'G01', cfdi: 'ADQUISICIÓN DE MERCANCIAS' },
-          { codigoCFDI: 'G03', cfdi: 'GASTOS EN GENERAL' },
-          { codigoCFDI: 'I01', cfdi: 'CONSTRUCCIONES' },
-          { codigoCFDI: 'I02', cfdi: 'MOBILIARIO Y EQUIPO DE OFICINA POR INVERSIONES' },
-          { codigoCFDI: 'I03', cfdi: 'EQUIPO DE TRANSPORTE' },
-          { codigoCFDI: 'I04', cfdi: 'EQUIPO DE COMPUTO Y ACCESORIOS' },
-          { codigoCFDI: 'I05', cfdi: 'DADOS, TOQUELES, MOLDES, MATRICES Y HERRAMENTAL' },
-          { codigoCFDI: 'I08', cfdi: 'OTRA MAQUINARIA Y EQUIPO' },
-      ];
-    
-      // const selectedItem = arregloCDFI.find(item => item.cfdi === clienteCfdi);
-      const selectedItem = arregloCDFI.find(item => item.cfdi === clienteCfdi) || { codigoCFDI: '00', cfdi: '',};
-      // console.log('selectedItem:', selectedItem);
-      
-      if (selectedItem) {
-        setFormData(prevFormData => ({
-          ...prevFormData,
-          codigoCFDI: selectedItem.codigoCFDI,
-          usoCFDI: selectedItem.codigoCFDI,
-          usoCfdi: selectedItem.codigoCFDI,
-          cfdi: selectedItem.cfdi,
-        }));
-      } else {
-        setFormData(prevFormData => ({
-          ...prevFormData,
-          cfdi: '',
-          codigoCFDI: '00',
-          usoCFDI: '00',
-          usoCfdi: '00',
-        }));
-      }
+    const arregloCDFI = [
+      { codigoCFDI: 'G01', cfdi: 'ADQUISICIÓN DE MERCANCIAS' },
+      { codigoCFDI: 'G03', cfdi: 'GASTOS EN GENERAL' },
+      { codigoCFDI: 'I01', cfdi: 'CONSTRUCCIONES' },
+      { codigoCFDI: 'I02', cfdi: 'MOBILIARIO Y EQUIPO DE OFICINA POR INVERSIONES' },
+      { codigoCFDI: 'I03', cfdi: 'EQUIPO DE TRANSPORTE' },
+      { codigoCFDI: 'I04', cfdi: 'EQUIPO DE COMPUTO Y ACCESORIOS' },
+      { codigoCFDI: 'I05', cfdi: 'DADOS, TOQUELES, MOLDES, MATRICES Y HERRAMENTAL' },
+      { codigoCFDI: 'I08', cfdi: 'OTRA MAQUINARIA Y EQUIPO' },
+    ];
+  
+    const selectedItem =
+      arregloCDFI.find((item) => item.cfdi === clienteCfdi) || {
+        codigoCFDI: '00',
+        cfdi: '',
+      };
+  
+    if (selectedItem) {
+      setFormData((prevFormData) => ({
+        ...prevFormData,
+        codigoCFDI: selectedItem.codigoCFDI,
+        usoCFDI: selectedItem.codigoCFDI,
+        usoCfdi: selectedItem.codigoCFDI,
+        cfdi: selectedItem.cfdi,
+      }));
+    } else {
+  
+      setFormData((prevFormData) => ({
+        ...prevFormData,
+        cfdi: '',
+        codigoCFDI: '00',
+        usoCFDI: '00',
+        usoCfdi: '00',
+      }));
+    }
   };
+  
 
+  const handleSubmit = async ( e, formData, setIsLoading, setIsValidated, setFormData, setSalidas, setVenta, initializeCfdi) => {
+    e.preventDefault();   
+    
+    if (!localStorage.getItem('formData')) {
+      localStorage.setItem('formData', JSON.stringify(formData));
+    }
 
-  const handleSubmit = async ( e, formData, setIsLoading, setIsValidated, setFormData, setSalidas, setVenta,initializeCfdi) => {
-      const arregloCDFI = [
+    const initialData = JSON.parse(localStorage.getItem('formData'));
+
+    const arregloCDFI = [
           { codigoCFDI: 'G01', cfdi: 'ADQUISICIÓN DE MERCANCIAS' },
           { codigoCFDI: 'G03', cfdi: 'GASTOS EN GENERAL' },
           { codigoCFDI: 'I01', cfdi: 'CONSTRUCCIONES' },
@@ -189,7 +209,7 @@ export const InvoiceForm = () => {
           { codigoCFDI: 'I05', cfdi: 'DADOS, TOQUELES, MOLDES, MATRICES Y HERRAMENTAL' },
           { codigoCFDI: 'I08', cfdi: 'OTRA MAQUINARIA Y EQUIPO' },
       ];
-      e.preventDefault(); 
+     
       setIsLoading(true); 
       
       // Validación inicial para verificar si los campos son válidos
@@ -203,91 +223,104 @@ export const InvoiceForm = () => {
         });
         setIsLoading(false); 
         return; 
-      }
+      }      
     
       const url = `https://binteapi.com:8095/api/ventas/${formData.sucursal}/${formData.folioSucursalFinal}/`;
-    
+      console.log("Llamando al API con URL:", url);
       try {
         const response = await fetch(url, {
           method: 'GET',
           headers: { 'Content-Type': 'application/json' },
         });
-    
+
         const result = await response.json();
+        console.log("Respuesta del API recibida:", result);
+
         if (response.ok) {
           
-          const validaCFDI = result.cliente.cfdi && arregloCDFI.includes(result.cliente.cfdi) ? result.cliente.cfdi : 'G01';
-    
+          console.log("Validando CFDI en arreglo:", result.cliente.cfdi);
+          const validaCFDI = arregloCDFI.find(
+            (item) => item.cfdi === result.cliente.cfdi
+          );
+          console.log("Resultado de la validación del CFDI:", validaCFDI);
+          console.log("Actualizando formData con valores obtenidos...");
+
           // Validación de la respuesta y actualización del estado
           setIsValidated(true);
-          setFormData({
-              ...formData,  
-              rutaPDF: `https://sgp-web.nyc3.digitaloceanspaces.com/sgp-web/${result.rutas.url_carpeta_facturacion}`,
-              rutaXML: `https://sgp-web.nyc3.digitaloceanspaces.com/sgp-web/${result.rutas.url_carpeta_facturacion}`,
-              password: result.empresa.contrasena_csd,
-              rutaLogotipo: result.rutas.url_logo,
-              lugar_expedicion: result.empresa.cp,
-              subtotal: result.venta.subtotal,
-              total: result.venta.total,
-              rfc_emisor: result.empresa.rfc,
-              rfc_receptor: result.cliente.rfc,
-              razonSocial_emisor: result.empresa.razonsocial,
-              razonSocial_receptor: result.cliente.empresa,
-              regimenFiscal_emisor: result.empresa.regimenfiscal,
-              regimenFiscal_receptor: result.cliente.regimenfiscal, 
-              rfc: result.cliente.rfc,
-              razonSocial: result.cliente.empresa,
-              domicilioFiscal_receptor: result.cliente.cp,
-              address_receptor: result.cliente.domicilio,
-              bank: result.banco.banco,
-              num_acount: result.banco.no_cuenta,
-              clabe: result.banco.clabe_inter,
-              serie: result.rutas.serie,
-              folioSucursal: formData.folioSucursalFinal,
-              folio: result.factura.id,
-              conceptos: result.salidas.map((salida) => ({
-                  clave_sat: salida.clave_sat,
-                  clave_prod: salida.numparte,
-                  cantidad: salida.cantidad,
-                  unidad_sat: salida.unidad_sat,
-                  descripcion: salida.descripcion,
-                  valor_unitario: salida.precio,
-                  importe: salida.importe,
-                  base: salida.importe,
-                  importe_iva_concepto: salida.iva_importe,
-                  Importe: salida.importe,
-                  objeto_imp: '02',
-                  impuesto: "002",
-                  tasaOcuota: "0.160000",
-                  tipoFactor: "Tasa",
-              })),
-              Base_iva: result.venta.subtotal,
-              importe_iva: result.venta.iva,
-              correo: result.cliente.correo,
-              cp: result.cliente.cp,
-              regimenFiscal: result.cliente.regimenfiscal,
-              metodoPago: result.venta.formapago,
-              importe_iva_concepto: result.salidas.iva_importe,
-              refpago: result.venta.refpago,
-              cfdi: result.cliente.cfdi,
-              codigoCFDI: result.cliente.codigoCFDI || '', 
-              usoCFDI: validaCFDI,
-              usoCfdi: validaCFDI,
-              cfdiCode: validaCFDI,
-              cliente: result.cliente.empresa,
-              correo_sucursal: result.rutas.email_envio_facturcion,
-              metodoPagoDescripcion: result.venta.formapago,
-              url_carpeta_facturacion: result.rutas.url_carpeta_facturacion,
-              factura: result.factura.factura
-          });
+          const updatedFormData = {
+            ...initialData,
+            ...formData,  
+            rutaPDF: `https://sgp-web.nyc3.digitaloceanspaces.com/sgp-web/${result.rutas.url_carpeta_facturacion}`,
+            rutaXML: `https://sgp-web.nyc3.digitaloceanspaces.com/sgp-web/${result.rutas.url_carpeta_facturacion}`,
+            password: result.empresa.contrasena_csd,
+            rutaLogotipo: result.rutas.url_logo,
+            lugar_expedicion: result.empresa.cp,
+            subtotal: result.venta.subtotal,
+            total: result.venta.total,
+            rfc_emisor: result.empresa.rfc,
+            rfc_receptor: result.cliente.rfc,
+            razonSocial_emisor: result.empresa.razonsocial,
+            razonSocial_receptor: result.cliente.empresa,
+            regimenFiscal_emisor: result.empresa.regimenfiscal,
+            regimenFiscal_receptor: result.cliente.regimenfiscal, 
+            rfc: result.cliente.rfc,
+            razonSocial: result.cliente.empresa,
+            domicilioFiscal_receptor: result.cliente.cp,
+            address_receptor: result.cliente.domicilio,
+            bank: result.banco.banco,
+            num_acount: result.banco.no_cuenta,
+            clabe: result.banco.clabe_inter,
+            serie: result.rutas.serie,
+            folioSucursal: formData.folioSucursalFinal,
+            folio: result.factura.id,
+            conceptos: result.salidas.map((salida) => ({
+                clave_sat: salida.clave_sat,
+                clave_prod: salida.numparte,
+                cantidad: salida.cantidad,
+                unidad_sat: salida.unidad_sat,
+                descripcion: salida.descripcion,
+                valor_unitario: salida.precio,
+                importe: salida.importe,
+                base: salida.importe,
+                importe_iva_concepto: salida.iva_importe,
+                Importe: salida.importe,
+                objeto_imp: '02',
+                impuesto: "002",
+                tasaOcuota: "0.160000",
+                tipoFactor: "Tasa",
+            })),
+            Base_iva: result.venta.subtotal,
+            importe_iva: result.venta.iva,
+            correo: result.cliente.correo,
+            cp: result.cliente.cp,
+            regimenFiscal: result.cliente.regimenfiscal,
+            metodoPago: result.venta.formapago,
+            importe_iva_concepto: result.salidas.iva_importe,
+            refpago: result.venta.refpago,
+            cfdi: result.cliente.cfdi,
+            codigoCFDI: result.cliente.codigoCFDI ? validaCFDI.codigoCFDI : "", 
+            usoCFDI: validaCFDI ? validaCFDI.codigoCFDI : "",
+            usoCfdi: validaCFDI ? validaCFDI.codigoCFDI : "",
+            cfdiCode: validaCFDI ? validaCFDI.codigoCFDI : "",
+            cliente: result.cliente.empresa,
+            correo_sucursal: result.rutas.email_envio_facturcion,
+            metodoPagoDescripcion: result.venta.formapago,
+            url_carpeta_facturacion: result.rutas.url_carpeta_facturacion,
+            factura: result.factura.factura
+          }
+          
+          setFormData(updatedFormData);
+          localStorage.setItem('formData', JSON.stringify(updatedFormData));
 
           // Guardar las salidas y la venta
+          setIsValidated(true);
           setSalidas(result.salidas);
           setVenta(result.venta);
 
           // Mensaje de éxito
           Swal.fire('Éxito', 'El folio es válido', 'success');
         } else {
+          console.log("Error en la respuesta del API:", result.error || result.warning);
           Swal.fire({
             title: 'WARNING',
             text: result.error || result.warning || 'El folio no es válido',
@@ -297,6 +330,7 @@ export const InvoiceForm = () => {
           });
         }
       } catch (error) {
+        console.error("Error al conectar con el servidor:", error);
         Swal.fire({
           title: 'UPPPS!!',
           text: error.message || 'Error al conectar con el servidor',
@@ -309,8 +343,52 @@ export const InvoiceForm = () => {
       }
   };
 
+  const handleCfdiChange = (event) => {
+    event.preventDefault();
+    
+    const selectedCfdi = event.target.value;
+    console.log("Valor seleccionado:", selectedCfdi);
+    
+    const selectedItem = arregloCDFI.find((item) => item.cfdi === selectedCfdi) || {
+      codigoCFDI: '',
+      cfdi: '',
+    };
+    
+    console.log("Elemento seleccionado:", selectedItem); // Verifica si se encontró el item en el arreglo.
+    
+    // Actualizamos el estado de formData
+    setFormData((prevFormData) => {
+      const updatedFormData = {
+        ...prevFormData, // Copia todos los valores existentes
+        usoCFDI: selectedItem.codigoCFDI,
+        usoCfdi: selectedItem.codigoCFDI,
+        cfdi: selectedItem.codigoCFDI === '00' ? '' : selectedItem.cfdi,
+        codigoCFDI: selectedItem.codigoCFDI, // Código CFDI
+        cfdiCode: selectedItem.codigoCFDI, // Lo mismo para cfdiCode
+      };
+      
+      // Guardamos el updatedFormData en el localStorage
+      localStorage.setItem('formData', JSON.stringify(updatedFormData));
+      
+      console.log("FormData actualizado y almacenado en localStorage:", updatedFormData);
+      
+      return updatedFormData;
+    });
+  };
+  
+
+  const handleChange = (e) => {
+
+    const { name, value } = e.target;
+    setFormData({
+      ...formData,
+      [name]: value
+    });
+  };
+
   
   const handleGenerateFactura = async (
+    e,
     formData, 
     setIsLoading, 
     setFormData, 
@@ -319,9 +397,16 @@ export const InvoiceForm = () => {
     setIsInvoiceGenerated,
   ) => {
     setIsLoading(true);
+
   
     // Validar que el correo sea obligatorio
-    if (!formData.correo || !formData.correo.trim()) {
+    const storedFormData = JSON.parse(localStorage.getItem('formData'));
+
+    console.log('Datos completos a enviar:', storedFormData);
+
+    // Validar si el correo está vacío o no es válido
+    const storedCorreo = storedFormData ? storedFormData.correo : '';
+    if (!storedCorreo || !storedCorreo.trim()) {
       Swal.fire({
         icon: 'error',
         title: 'Correo obligatorio',
@@ -332,24 +417,57 @@ export const InvoiceForm = () => {
       setIsLoading(false);
       return;
     }
-  
-    if (!formData.sucursal || !formData.folioSucursalFinal) {
+
+    // Validar que ningún campo de CFDI esté vacío
+    const storedCodigoCFDI = storedFormData ? storedFormData.codigoCFDI : '';
+    const storedUsoCFDI = storedFormData ? storedFormData.usoCFDI : '';
+    const storedUsoCfdi = storedFormData ? storedFormData.usoCfdi : '';
+    const storedCfdi = storedFormData ? storedFormData.cfdi : '';
+    
+    if (!storedCodigoCFDI || !storedUsoCFDI || !storedUsoCfdi || !storedCfdi) {
       Swal.fire({
-        title: 'WARNING',
-        text: 'Por favor, selecciona una sucursal e ingresa un folio',
-        icon: 'warning',
-        iconColor: '#4782f6',
-        confirmButtonColor: '#007bff',
+        icon: 'error',
+        title: 'Campos CFDI obligatorios',
+        text: 'Por favor, asegúrate de completar todos los campos relacionados con el CFDI.',
+        confirmButtonText: 'Aceptar',
+        timer: 3000,
       });
       setIsLoading(false);
       return;
     }
+
+    // Validar el campo "C.P." (Código Postal)
+    const storedCP = storedFormData ? storedFormData.cp : '';
+    if (!storedCP || storedCP.toString().length !== 5 || isNaN(storedCP)) {
+      Swal.fire({
+        icon: 'error',
+        title: 'C.P. inválido',
+        text: 'Por favor, ingresa un Código Postal válido de 5 dígitos.',
+        confirmButtonText: 'Aceptar',
+        timer: 3000,
+      });
+      setIsLoading(false);
+      return;
+    }
+
+    // Validar el campo "Razón Social"
+    const storedRazonSocial = storedFormData ? storedFormData.razonSocial : '';
+    if (!storedRazonSocial || storedRazonSocial.trim().length < 3) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Razón Social inválida',
+        text: 'Por favor, ingresa una Razón Social válida de al menos 3 caracteres.',
+        confirmButtonText: 'Aceptar',
+        timer: 3000,
+      });
+      setIsLoading(false);
+      return;
+    }
+
     
     let baseUrl = `https://sgp-web.nyc3.cdn.digitaloceanspaces.com/sgp-web/${formData.url_carpeta_facturacion}/${formData.factura}`
     try {
-
-      console.log("Datos enviados:", formData);
-      const response = await axios.post('https://www.binteapi.com:8085/src/cfdi40.php', formData);
+      const response = await axios.post('https://www.binteapi.com:8085/src/cfdi40.php', storedFormData);
       
       if (response.status === 200) {
         Swal.fire('Factura Generada', 'La factura se ha generado correctamente', 'success')
@@ -358,7 +476,6 @@ export const InvoiceForm = () => {
               console.log(result);
               // Extraer los paths para el PDF, XML y UUID de la respuesta
               const { path_pdf, path_xml, UUID } = response.data;
-              // const baseUrl = 'https://sgp-web.nyc3.cdn.digitaloceanspaces.com/sgp-web/';
               const pdfUrl = `${baseUrl}.pdf`;
               const xmlUrl = `${baseUrl}.xml`;
               
@@ -394,6 +511,9 @@ export const InvoiceForm = () => {
                     iconColor: '#4782f6', 
                     confirmButtonColor: '#007bff',
                   });
+                  // setFormData(initialState);
+                  // setIsInvoiceGenerated(false)
+                  // setIsValidated(false)
                 }
               } catch (saveError) {
                 const saveErrorMessage = saveError.response?.data?.error || 'Error al guardar la factura en la base de datos';
@@ -405,6 +525,9 @@ export const InvoiceForm = () => {
                   iconColor: '#4782f6', 
                   confirmButtonColor: '#007bff',
                 });
+                // setFormData(initialState);
+                // setIsInvoiceGenerated(false)
+                // setIsValidated(false)
               }
             }
           });
@@ -517,6 +640,8 @@ export const InvoiceForm = () => {
           confirmButtonColor: '#007bff'
         });
       }
+      localStorage.removeItem('formData');
+      console.log('localStorage limpiado');
     } catch (error) {
       const errorMessage = error.response?.data?.message || 'Error al enviar el correo';
       Swal.fire({
@@ -529,22 +654,16 @@ export const InvoiceForm = () => {
     } finally {
       setIsLoading(false);
     }
-};
+  };
 
+  // useEffect(() => {
+  //   // Imprimir el formData como cadena JSON cada vez que cambie
+  //   console.log("formData actualizado:", JSON.stringify(formData, null, 2)); 
+  //   // Guardamos el formData actualizado en el localStorage
+  //   localStorage.setItem('formData', JSON.stringify(formData));
+  // }, [formData]);
   
   // https://binteapi.com:8095/api/sucursales/http://localhost:5173/factura-ERN/
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData({
-      ...formData,
-      [name]: value
-    });
-  };
-
-  const handleCodigoCFDIUpdate = (nuevoCodigoCFDI) => {
-    setCodigoCFDI(nuevoCodigoCFDI);
-  };
 
 
   useEffect(() => {
@@ -555,7 +674,7 @@ export const InvoiceForm = () => {
     // Limpiar el campo de folio cuando se genera la factura
     if (isInvoiceGeneratedAndSended) {
       console.log("Factura generada, limpiando el folio...");
-      setFormData(prevData => ({ ...prevData, folioSucursalFinal: '' }));
+      setFormData(prevData => ({ ...prevData, folioSucursalFinal: '', folio: '' }));
     }
   }, [isInvoiceGeneratedAndSended]);
 
@@ -567,8 +686,8 @@ export const InvoiceForm = () => {
   const closeModal = () => {
     setIsModalOpen(false);
   };
-  
 
+  
   return (
     <form onSubmit={(e) => handleSubmit(e, formData, setIsLoading, setIsValidated, setFormData, setSalidas, setVenta, initializeCfdi)}>
       {/* Mostrar el loader */}
@@ -690,14 +809,34 @@ export const InvoiceForm = () => {
                 />
               </div>
             
-              <UsoCFDI 
-                codigoCFDI={formData.codigoCFDI}
-                usoCFDI={formData.usoCFDI}
-                cfdi={formData.cfdi}
-                setFormData={setFormData}
-                onUpdateCodigoCFDI={handleCodigoCFDIUpdate}
-              />
+              {/* USO CFDI */}
+              <div className="w-full md:col-start-5 md:col-end-6">
+                <label className="block text-sm font-medium text-gray-700">Código CFDI:</label>
+                <input
+                  type="text"
+                  name="usoCFDI"
+                  value={formData.codigoCFDI || ''} // Fallback a una cadena vacía
+                  readOnly
+                  className="bg-gray-300 mt-1 block w-full border border-gray-300 rounded-md p-1"
+                />
+              </div>
 
+              <div className="w-full md:col-span-2 md:col-start-6">
+                <label className="block text-sm font-medium text-gray-700">Selecciona el CFDI:</label>
+                <select
+                  name="cfdi"
+                  value={formData.cfdi || ''} // Fallback a una cadena vacía
+                  onChange={handleCfdiChange}
+                  className="bg-gray-300 mt-1 block w-full border border-gray-300 rounded-md p-1"
+                >
+                  <option value="">Seleccionar...</option>
+                  {arregloCDFI.map((item) => (
+                    <option key={item.codigoCFDI} value={item.cfdi}>
+                      {item.cfdi}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
             </div>
 
@@ -750,9 +889,14 @@ export const InvoiceForm = () => {
                   value={formData.correo}
                   onChange={handleChange}
                   className="bg-gray-300 mt-1 block w-full border border-gray-300 rounded-md p-1"
+                  onBlur={() => {
+                    // Guardar en localStorage solo cuando el usuario termine de escribir el correo
+                    localStorage.setItem('formData', JSON.stringify(formData));
+                  }}
                 />
               </div>
             </div>
+
 
             {/* Tabla */}
             <ItemsTable salidas={salidas} />
@@ -785,10 +929,13 @@ export const InvoiceForm = () => {
               {/* Botón para Descargar PDF */}
               <div>
                 <button
-                  className="w-full bg-[#365326] text-white px-4 py-2 mt-4 hover:bg-[#3e662a] rounded-3xl uppercase"
-                  onClick={() => window.open(pdfUrl, '_blank')}
-                >
-                  Descargar Factura
+                    className="w-full bg-[#365326] text-white px-4 py-2 mt-4 hover:bg-[#3e662a] rounded-3xl uppercase"
+                    onClick={() => {
+                      console.log('Abriendo PDF:', pdfUrl); // Para depuración
+                      window.open(pdfUrl, '_blank');
+                    }}
+                  >
+                    Descargar Factura
                 </button>
               </div>
 

@@ -1,6 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, memo } from 'react';
 
-export const UsoCFDI = ({ cfdi, setFormData, onUpdateCodigoCFDI }) => {
+export const UsoCFDI = memo(({ cfdi = '', setFormData, onUpdateCodigoCFDI }) => {
+  console.log(cfdi, setFormData, onUpdateCodigoCFDI);
+  
   const [codigoCFDI, setCodigoCFDI] = useState('');
 
   // Arreglo de CFDIs disponibles
@@ -15,13 +17,11 @@ export const UsoCFDI = ({ cfdi, setFormData, onUpdateCodigoCFDI }) => {
     { codigoCFDI: 'I08', cfdi: 'OTRA MAQUINARIA Y EQUIPO' },
   ];
 
-  // Efecto para cuando cambia el prop `cfdi`
   useEffect(() => {
-    // Encuentra el CFDI seleccionado en el arreglo
     const selectedItem = arregloCDFI.find(item => item.cfdi === cfdi);
 
     if (selectedItem) {
-      setCodigoCFDI(selectedItem.codigoCFDI); // Actualiza el código CFDI
+      setCodigoCFDI(selectedItem.codigoCFDI); 
     } else {
       setCodigoCFDI('');
     }
@@ -29,17 +29,17 @@ export const UsoCFDI = ({ cfdi, setFormData, onUpdateCodigoCFDI }) => {
 
   // Función para manejar el cambio del CFDI en el select
   const handleCfdiChange = (event) => {
+    event.preventDefault();
     const selectedCfdi = event.target.value;
     
     // Encuentra el CFDI seleccionado en el arreglo
     const selectedItem = arregloCDFI.find(item => item.cfdi === selectedCfdi);
     
     if (selectedItem) {
-      // Actualiza el formData con el código CFDI y el nombre del CFDI seleccionado
       setFormData({
-        usoCFDI: selectedItem.codigoCFDI,  // Asigna el código CFDI
-        usoCfdi: selectedItem.codigoCFDI,  // Lo mismo para usoCfdi
-        cfdi: selectedItem.codigoCFDI === '00' ? '' : selectedItem.cfdi, // Si es '00', dejamos vacío
+        usoCFDI: selectedItem.codigoCFDI,  
+        usoCfdi: selectedItem.codigoCFDI,  
+        cfdi: selectedItem.codigoCFDI === '00' ? '' : selectedItem.cfdi,
         codigoCFDI: selectedItem.codigoCFDI, // Código CFDI
         cfdiCode: selectedItem.codigoCFDI, // Lo mismo para cfdiCode
       });
@@ -88,4 +88,4 @@ export const UsoCFDI = ({ cfdi, setFormData, onUpdateCodigoCFDI }) => {
       </div>
     </>
   );
-};
+});
