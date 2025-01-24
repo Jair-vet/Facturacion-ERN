@@ -150,6 +150,61 @@ export const InvoiceForm = () => {
     obtenerSucursales();
   }, []);
 
+  // Validaciones
+  const validateFields = (formData) => {
+    if (!formData.sucursal || !formData.folioSucursalFinal) {
+      Swal.fire({
+        title: 'WARNING',
+        text: 'Por favor, selecciona una sucursal e ingresa un folio',
+        icon: 'warning',
+        iconColor: '#4782f6', 
+        confirmButtonColor: '#007bff',
+      });
+      return false;
+    }
+  
+    if (!formData.correo || !formData.correo.trim()) {
+      Swal.fire({
+        title: 'Correo obligatorio',
+        text: 'Por favor, ingresa un correo electrónico válido.',
+        icon: 'error',
+        confirmButtonText: 'Aceptar',
+      });
+      return false;
+    }
+  
+    if (!formData.codigoCFDI || !formData.usoCFDI || !formData.cfdi) {
+      Swal.fire({
+        title: 'Campos CFDI obligatorios',
+        text: 'Por favor, asegúrate de completar todos los campos relacionados con el CFDI.',
+        icon: 'error',
+        confirmButtonText: 'Aceptar',
+      });
+      return false;
+    }
+  
+    if (!formData.cp || formData.cp.toString().length !== 5 || isNaN(formData.cp)) {
+      Swal.fire({
+        title: 'C.P. inválido',
+        text: 'Por favor, ingresa un Código Postal válido de 5 dígitos.',
+        icon: 'error',
+        confirmButtonText: 'Aceptar',
+      });
+      return false;
+    }
+  
+    if (!formData.razonSocial || formData.razonSocial.trim().length < 3) {
+      Swal.fire({
+        title: 'Razón Social inválida',
+        text: 'Por favor, ingresa una Razón Social válida de al menos 3 caracteres.',
+        icon: 'error',
+        confirmButtonText: 'Aceptar',
+      });
+      return false;
+    }
+  
+    return true;
+  };
 
   const initializeCfdi = (clienteCfdi, setFormData) => {
     const arregloCDFI = [
@@ -188,160 +243,135 @@ export const InvoiceForm = () => {
       }));
     }
   };
-  
+  // 22012512103882
 
-  const handleSubmit = async ( e, formData, setIsLoading, setIsValidated, setFormData, setSalidas, setVenta, initializeCfdi) => {
-    e.preventDefault();   
-    
-    if (!localStorage.getItem('formData')) {
-      localStorage.setItem('formData', JSON.stringify(formData));
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    if (!formData.folioSucursalFinal) {
+      localStorage.removeItem('formData'); // Limpiar el localStorage
+      setFormData(initialState); // Limpiar el state
+      setIsValidated(false); // Deshabilitar la validación
+      return;
     }
 
-    const initialData = JSON.parse(localStorage.getItem('formData'));
+    setIsLoading(true);
+    const url = `https://binteapi.com:8095/api/ventas/${formData.sucursal}/${formData.folioSucursalFinal}/`;
+    try {
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+      });
 
-    const arregloCDFI = [
-          { codigoCFDI: 'G01', cfdi: 'ADQUISICIÓN DE MERCANCIAS' },
-          { codigoCFDI: 'G03', cfdi: 'GASTOS EN GENERAL' },
-          { codigoCFDI: 'I01', cfdi: 'CONSTRUCCIONES' },
-          { codigoCFDI: 'I02', cfdi: 'MOBILIARIO Y EQUIPO DE OFICINA POR INVERSIONES' },
-          { codigoCFDI: 'I03', cfdi: 'EQUIPO DE TRANSPORTE' },
-          { codigoCFDI: 'I04', cfdi: 'EQUIPO DE COMPUTO Y ACCESORIOS' },
-          { codigoCFDI: 'I05', cfdi: 'DADOS, TOQUELES, MOLDES, MATRICES Y HERRAMENTAL' },
-          { codigoCFDI: 'I08', cfdi: 'OTRA MAQUINARIA Y EQUIPO' },
-      ];
-     
-      setIsLoading(true); 
-      
-      // Validación inicial para verificar si los campos son válidos
-      if (!formData.sucursal || !formData.folioSucursalFinal) {
+      const result = await response.json();
+
+      if (response.ok) {
+        const validaCFDI = arregloCDFI.find(
+          (item) => item.cfdi === result.cliente.cfdi
+        );
+
+        // Verifica si 'rutas' existe en la respuesta antes de acceder a sus propiedades
+        if (!result.rutas) {
+          Swal.fire({
+            title: 'Error',
+            text: 'No se encontraron las rutas de la factura.',
+            icon: 'error',
+          });
+          return;
+        }
+
+        setIsValidated(true);
+        const updatedFormData = {
+          ...initialState,
+          ...formData,
+          rutaPDF: `https://sgp-web.nyc3.digitaloceanspaces.com/sgp-web/${result.rutas.url_carpeta_facturacion}`,
+          rutaXML: `https://sgp-web.nyc3.digitaloceanspaces.com/sgp-web/${result.rutas.url_carpeta_facturacion}`,
+          password: result.empresa.contrasena_csd,
+          rutaLogotipo: result.rutas.url_logo,
+          lugar_expedicion: result.empresa.cp,
+          subtotal: result.venta.subtotal,
+          total: result.venta.total,
+          rfc_emisor: result.empresa.rfc,
+          rfc_receptor: result.cliente.rfc,
+          razonSocial_emisor: result.empresa.razonsocial,
+          razonSocial_receptor: result.cliente.empresa,
+          regimenFiscal_emisor: result.empresa.regimenfiscal,
+          regimenFiscal_receptor: result.cliente.regimenfiscal,
+          rfc: result.cliente.rfc,
+          razonSocial: result.cliente.empresa,
+          domicilioFiscal_receptor: result.cliente.cp,
+          address_receptor: result.cliente.domicilio,
+          bank: result.banco.banco,
+          num_acount: result.banco.no_cuenta,
+          clabe: result.banco.clabe_inter,
+          serie: result.rutas.serie,
+          folioSucursal: formData.folioSucursalFinal,
+          folio: result.factura.id,
+          conceptos: result.salidas.map((salida) => ({
+            clave_sat: salida.clave_sat,
+            clave_prod: salida.numparte,
+            cantidad: salida.cantidad,
+            unidad_sat: salida.unidad_sat,
+            descripcion: salida.descripcion,
+            valor_unitario: salida.precio,
+            importe: salida.importe,
+            base: salida.importe,
+            importe_iva_concepto: salida.iva_importe,
+            Importe: salida.importe,
+            objeto_imp: '02',
+            impuesto: '002',
+            tasaOcuota: '0.160000',
+            tipoFactor: 'Tasa',
+          })),
+          Base_iva: result.venta.subtotal,
+          importe_iva: result.venta.iva,
+          correo: result.cliente.correo,
+          cp: result.cliente.cp,
+          regimenFiscal: result.cliente.regimenfiscal,
+          metodoPago: result.venta.formapago,
+          importe_iva_concepto: result.salidas.iva_importe,
+          refpago: result.venta.refpago,
+          cfdi: result.cliente.cfdi,
+          codigoCFDI: result.cliente.codigoCFDI ? validaCFDI.codigoCFDI : '',
+          usoCFDI: validaCFDI ? validaCFDI.codigoCFDI : '',
+          usoCfdi: validaCFDI ? validaCFDI.codigoCFDI : '',
+          cfdiCode: validaCFDI ? validaCFDI.codigoCFDI : '',
+          cliente: result.cliente.empresa,
+          correo_sucursal: result.rutas.email_envio_facturcion,
+          metodoPagoDescripcion: result.venta.formapago,
+          url_carpeta_facturacion: result.rutas.url_carpeta_facturacion,
+          factura: result.factura.factura,
+        };
+
+        setFormData(updatedFormData);
+        localStorage.setItem('formData', JSON.stringify(updatedFormData));
+        setSalidas(result.salidas);
+        setVenta(result.venta);
+
+        Swal.fire('Éxito', 'El folio es válido', 'success');
+      } else {
         Swal.fire({
           title: 'WARNING',
-          text: 'Por favor, selecciona una sucursal e ingresa un folio',
-          icon: 'warning',
-          iconColor: '#4782f6', 
-          confirmButtonColor: '#007bff',
-        });
-        setIsLoading(false); 
-        return; 
-      }      
-    
-      const url = `https://binteapi.com:8095/api/ventas/${formData.sucursal}/${formData.folioSucursalFinal}/`;
-      console.log("Llamando al API con URL:", url);
-      try {
-        const response = await fetch(url, {
-          method: 'GET',
-          headers: { 'Content-Type': 'application/json' },
-        });
-
-        const result = await response.json();
-        console.log("Respuesta del API recibida:", result);
-
-        if (response.ok) {
-          
-          console.log("Validando CFDI en arreglo:", result.cliente.cfdi);
-          const validaCFDI = arregloCDFI.find(
-            (item) => item.cfdi === result.cliente.cfdi
-          );
-          console.log("Resultado de la validación del CFDI:", validaCFDI);
-          console.log("Actualizando formData con valores obtenidos...");
-
-          // Validación de la respuesta y actualización del estado
-          setIsValidated(true);
-          const updatedFormData = {
-            ...initialData,
-            ...formData,  
-            rutaPDF: `https://sgp-web.nyc3.digitaloceanspaces.com/sgp-web/${result.rutas.url_carpeta_facturacion}`,
-            rutaXML: `https://sgp-web.nyc3.digitaloceanspaces.com/sgp-web/${result.rutas.url_carpeta_facturacion}`,
-            password: result.empresa.contrasena_csd,
-            rutaLogotipo: result.rutas.url_logo,
-            lugar_expedicion: result.empresa.cp,
-            subtotal: result.venta.subtotal,
-            total: result.venta.total,
-            rfc_emisor: result.empresa.rfc,
-            rfc_receptor: result.cliente.rfc,
-            razonSocial_emisor: result.empresa.razonsocial,
-            razonSocial_receptor: result.cliente.empresa,
-            regimenFiscal_emisor: result.empresa.regimenfiscal,
-            regimenFiscal_receptor: result.cliente.regimenfiscal, 
-            rfc: result.cliente.rfc,
-            razonSocial: result.cliente.empresa,
-            domicilioFiscal_receptor: result.cliente.cp,
-            address_receptor: result.cliente.domicilio,
-            bank: result.banco.banco,
-            num_acount: result.banco.no_cuenta,
-            clabe: result.banco.clabe_inter,
-            serie: result.rutas.serie,
-            folioSucursal: formData.folioSucursalFinal,
-            folio: result.factura.id,
-            conceptos: result.salidas.map((salida) => ({
-                clave_sat: salida.clave_sat,
-                clave_prod: salida.numparte,
-                cantidad: salida.cantidad,
-                unidad_sat: salida.unidad_sat,
-                descripcion: salida.descripcion,
-                valor_unitario: salida.precio,
-                importe: salida.importe,
-                base: salida.importe,
-                importe_iva_concepto: salida.iva_importe,
-                Importe: salida.importe,
-                objeto_imp: '02',
-                impuesto: "002",
-                tasaOcuota: "0.160000",
-                tipoFactor: "Tasa",
-            })),
-            Base_iva: result.venta.subtotal,
-            importe_iva: result.venta.iva,
-            correo: result.cliente.correo,
-            cp: result.cliente.cp,
-            regimenFiscal: result.cliente.regimenfiscal,
-            metodoPago: result.venta.formapago,
-            importe_iva_concepto: result.salidas.iva_importe,
-            refpago: result.venta.refpago,
-            cfdi: result.cliente.cfdi,
-            codigoCFDI: result.cliente.codigoCFDI ? validaCFDI.codigoCFDI : "", 
-            usoCFDI: validaCFDI ? validaCFDI.codigoCFDI : "",
-            usoCfdi: validaCFDI ? validaCFDI.codigoCFDI : "",
-            cfdiCode: validaCFDI ? validaCFDI.codigoCFDI : "",
-            cliente: result.cliente.empresa,
-            correo_sucursal: result.rutas.email_envio_facturcion,
-            metodoPagoDescripcion: result.venta.formapago,
-            url_carpeta_facturacion: result.rutas.url_carpeta_facturacion,
-            factura: result.factura.factura
-          }
-          
-          setFormData(updatedFormData);
-          localStorage.setItem('formData', JSON.stringify(updatedFormData));
-
-          // Guardar las salidas y la venta
-          setIsValidated(true);
-          setSalidas(result.salidas);
-          setVenta(result.venta);
-
-          // Mensaje de éxito
-          Swal.fire('Éxito', 'El folio es válido', 'success');
-        } else {
-          console.log("Error en la respuesta del API:", result.error || result.warning);
-          Swal.fire({
-            title: 'WARNING',
-            text: result.error || result.warning || 'El folio no es válido',
-            icon: 'warning',
-            iconColor: '#4782f6',
-            confirmButtonColor: '#007bff',
-          });
-        }
-      } catch (error) {
-        console.error("Error al conectar con el servidor:", error);
-        Swal.fire({
-          title: 'UPPPS!!',
-          text: error.message || 'Error al conectar con el servidor',
+          text: result.error || result.warning || 'El folio no es válido',
           icon: 'warning',
           iconColor: '#4782f6',
           confirmButtonColor: '#007bff',
         });
-      } finally {
-        setIsLoading(false);
       }
+    } catch (error) {
+      console.error('Error al conectar con el servidor:', error);
+      Swal.fire({
+        title: 'UPPPS!!',
+        text: error.message || 'Error al conectar con el servidor',
+        icon: 'warning',
+        iconColor: '#4782f6',
+        confirmButtonColor: '#007bff',
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
+  
 
   const handleCfdiChange = (event) => {
     event.preventDefault();
@@ -394,107 +424,40 @@ export const InvoiceForm = () => {
     setFormData, 
     setPdf, 
     setXml, 
-    setIsInvoiceGenerated,
+    setIsInvoiceGenerated
   ) => {
-    setIsLoading(true);
-
+    // Validación de los Campos
+    if (!validateFields(formData)) {
+      return; 
+    }
   
-    // Validar que el correo sea obligatorio
-    const storedFormData = JSON.parse(localStorage.getItem('formData'));
-
-    console.log('Datos completos a enviar:', storedFormData);
-
-    // Validar si el correo está vacío o no es válido
-    const storedCorreo = storedFormData ? storedFormData.correo : '';
-    if (!storedCorreo || !storedCorreo.trim()) {
-      Swal.fire({
-        icon: 'error',
-        title: 'Correo obligatorio',
-        text: 'Por favor, ingresa un correo electrónico válido.',
-        confirmButtonText: 'Aceptar',
-        timer: 3000,
-      });
-      setIsLoading(false);
-      return;
-    }
-
-    // Validar que ningún campo de CFDI esté vacío
-    const storedCodigoCFDI = storedFormData ? storedFormData.codigoCFDI : '';
-    const storedUsoCFDI = storedFormData ? storedFormData.usoCFDI : '';
-    const storedUsoCfdi = storedFormData ? storedFormData.usoCfdi : '';
-    const storedCfdi = storedFormData ? storedFormData.cfdi : '';
-    
-    if (!storedCodigoCFDI || !storedUsoCFDI || !storedUsoCfdi || !storedCfdi) {
-      Swal.fire({
-        icon: 'error',
-        title: 'Campos CFDI obligatorios',
-        text: 'Por favor, asegúrate de completar todos los campos relacionados con el CFDI.',
-        confirmButtonText: 'Aceptar',
-        timer: 3000,
-      });
-      setIsLoading(false);
-      return;
-    }
-
-    // Validar el campo "C.P." (Código Postal)
-    const storedCP = storedFormData ? storedFormData.cp : '';
-    if (!storedCP || storedCP.toString().length !== 5 || isNaN(storedCP)) {
-      Swal.fire({
-        icon: 'error',
-        title: 'C.P. inválido',
-        text: 'Por favor, ingresa un Código Postal válido de 5 dígitos.',
-        confirmButtonText: 'Aceptar',
-        timer: 3000,
-      });
-      setIsLoading(false);
-      return;
-    }
-
-    // Validar el campo "Razón Social"
-    const storedRazonSocial = storedFormData ? storedFormData.razonSocial : '';
-    if (!storedRazonSocial || storedRazonSocial.trim().length < 3) {
-      Swal.fire({
-        icon: 'error',
-        title: 'Razón Social inválida',
-        text: 'Por favor, ingresa una Razón Social válida de al menos 3 caracteres.',
-        confirmButtonText: 'Aceptar',
-        timer: 3000,
-      });
-      setIsLoading(false);
-      return;
-    }
-
-    
-    let baseUrl = `https://sgp-web.nyc3.cdn.digitaloceanspaces.com/sgp-web/${formData.url_carpeta_facturacion}/${formData.factura}`
+    setIsLoading(true);
+  
+    let baseUrl = `https://sgp-web.nyc3.cdn.digitaloceanspaces.com/sgp-web/${formData.url_carpeta_facturacion}/${formData.factura}`;
+  
     try {
-      const response = await axios.post('https://www.binteapi.com:8085/src/cfdi40.php', storedFormData);
-      
+      // Primero, generar la factura
+      const response = await axios.post('https://www.binteapi.com:8085/src/cfdi40.php', formData); // Usar formData aquí
+  
       if (response.status === 200) {
         Swal.fire('Factura Generada', 'La factura se ha generado correctamente', 'success')
           .then(async (result) => {
             if (result.isConfirmed) {
-              console.log(result);
               // Extraer los paths para el PDF, XML y UUID de la respuesta
               const { path_pdf, path_xml, UUID } = response.data;
-              const pdfUrl = `${baseUrl}.pdf`;
-              const xmlUrl = `${baseUrl}.xml`;
-              
+              const pdfUrl = `${baseUrl}/${path_pdf}.pdf`; // Asegúrate de concatenar correctamente la ruta
+              const xmlUrl = `${baseUrl}/${path_xml}.xml`; // Asegúrate de concatenar correctamente la ruta
+  
+              // Actualizar el estado con las URLs
               setPdf(pdfUrl);
               setXml(xmlUrl);
-              // console.log(xml);
-              
-              // openFileInNewTab(pdfUrl);
-              // downloadFile(pdfUrl, 'factura.pdf');
-              // downloadFile(xmlUrl, 'factura.xml');
-              // setFacturaGenerada(result.facturaUrl);
-
-              setIsInvoiceGenerated(true);
+  
+              // Ahora que tenemos las rutas, procedemos a guardar la factura en la base de datos
+              const sucursal = encodeURIComponent(formData.sucursal.trim());
+              const folioTicket = encodeURIComponent(formData.folioSucursalFinal.trim());
+              const saveFacturaUrl = `https://binteapi.com:8095/api/factura/${sucursal}/${folioTicket}/`;
   
               try {
-                const sucursal = encodeURIComponent(formData.sucursal.trim());
-                const folioTicket = encodeURIComponent(formData.folioSucursal.trim());
-                const saveFacturaUrl = `https://binteapi.com:8095/api/factura/${sucursal}/${folioTicket}/`;
-  
                 const saveResponse = await axios.put(saveFacturaUrl, {
                   path_pdf: `ern-melaminas/${path_pdf}`,
                   path_xml: `ern-melaminas/${path_xml}`,
@@ -503,6 +466,7 @@ export const InvoiceForm = () => {
   
                 if (saveResponse.status === 200 && saveResponse.data?.id) {
                   Swal.fire('Factura Guardada', 'La factura ha sido guardada en la base de datos correctamente', 'success');
+                  setIsInvoiceGenerated(true); // Marcar factura como generada
                 } else {
                   Swal.fire({
                     title: 'UPPPS!!',
@@ -511,9 +475,6 @@ export const InvoiceForm = () => {
                     iconColor: '#4782f6', 
                     confirmButtonColor: '#007bff',
                   });
-                  // setFormData(initialState);
-                  // setIsInvoiceGenerated(false)
-                  // setIsValidated(false)
                 }
               } catch (saveError) {
                 const saveErrorMessage = saveError.response?.data?.error || 'Error al guardar la factura en la base de datos';
@@ -525,9 +486,6 @@ export const InvoiceForm = () => {
                   iconColor: '#4782f6', 
                   confirmButtonColor: '#007bff',
                 });
-                // setFormData(initialState);
-                // setIsInvoiceGenerated(false)
-                // setIsValidated(false)
               }
             }
           });
@@ -555,6 +513,12 @@ export const InvoiceForm = () => {
     xmlUrl, 
     setIsLoading
   ) => {
+
+    if (!isInvoiceGenerated) {
+      Swal.fire('No hay factura generada', 'Primero debes generar la factura antes de enviarla por correo.');
+      return;
+    }
+    
     setIsLoading(true);
   
     // Función para convertir un archivo en base64
