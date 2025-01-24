@@ -206,43 +206,6 @@ export const InvoiceForm = () => {
     return true;
   };
 
-  const initializeCfdi = (clienteCfdi, setFormData) => {
-    const arregloCDFI = [
-      { codigoCFDI: 'G01', cfdi: 'ADQUISICIÓN DE MERCANCIAS' },
-      { codigoCFDI: 'G03', cfdi: 'GASTOS EN GENERAL' },
-      { codigoCFDI: 'I01', cfdi: 'CONSTRUCCIONES' },
-      { codigoCFDI: 'I02', cfdi: 'MOBILIARIO Y EQUIPO DE OFICINA POR INVERSIONES' },
-      { codigoCFDI: 'I03', cfdi: 'EQUIPO DE TRANSPORTE' },
-      { codigoCFDI: 'I04', cfdi: 'EQUIPO DE COMPUTO Y ACCESORIOS' },
-      { codigoCFDI: 'I05', cfdi: 'DADOS, TOQUELES, MOLDES, MATRICES Y HERRAMENTAL' },
-      { codigoCFDI: 'I08', cfdi: 'OTRA MAQUINARIA Y EQUIPO' },
-    ];
-  
-    const selectedItem =
-      arregloCDFI.find((item) => item.cfdi === clienteCfdi) || {
-        codigoCFDI: '00',
-        cfdi: '',
-      };
-  
-    if (selectedItem) {
-      setFormData((prevFormData) => ({
-        ...prevFormData,
-        codigoCFDI: selectedItem.codigoCFDI,
-        usoCFDI: selectedItem.codigoCFDI,
-        usoCfdi: selectedItem.codigoCFDI,
-        cfdi: selectedItem.cfdi,
-      }));
-    } else {
-  
-      setFormData((prevFormData) => ({
-        ...prevFormData,
-        cfdi: '',
-        codigoCFDI: '00',
-        usoCFDI: '00',
-        usoCfdi: '00',
-      }));
-    }
-  };
   // 22012512103882
 
   const handleSubmit = async (e) => {
@@ -266,9 +229,22 @@ export const InvoiceForm = () => {
       const result = await response.json();
 
       if (response.ok) {
-        const validaCFDI = arregloCDFI.find(
-          (item) => item.cfdi === result.cliente.cfdi
-        );
+        console.log("Validando CFDI en arreglo:", result.cliente.cfdi);
+
+        // Verificar si el CFDI viene en la respuesta
+        let validaCFDI = null;
+        if (result.cliente.cfdi) {
+          validaCFDI = arregloCDFI.find((item) => item.cfdi === result.cliente.cfdi);
+        }
+        
+        console.log("Resultado de la validación del CFDI:", validaCFDI);
+
+        if (!validaCFDI) {
+          validaCFDI = {
+            codigoCFDI: '',
+            cfdi: '',
+          };
+        }
 
         // Verifica si 'rutas' existe en la respuesta antes de acceder a sus propiedades
         if (!result.rutas) {
@@ -653,7 +629,7 @@ export const InvoiceForm = () => {
 
   
   return (
-    <form onSubmit={(e) => handleSubmit(e, formData, setIsLoading, setIsValidated, setFormData, setSalidas, setVenta, initializeCfdi)}>
+    <form onSubmit={(e) => handleSubmit(e, formData, setIsLoading, setIsValidated, setFormData, setSalidas, setVenta)}>
       {/* Mostrar el loader */}
       {isLoading && <div className=" flex justify-center items-center"><Loader /></div>}
 
