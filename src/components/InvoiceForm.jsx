@@ -199,8 +199,11 @@ export const InvoiceForm = () => {
 
   // Cambio del Folio 
   const handleFolioChange = (e) => {
+    e.preventDefault()
     const folio = e.target.value;
     console.log("Folio cambiado: ", folio); // Debugging folio
+  
+    // Solo actualizamos el folio, sin modificar la sucursal
     setFormData((prevData) => ({
       ...prevData,
       folioSucursalFinal: folio,
@@ -222,7 +225,8 @@ export const InvoiceForm = () => {
       setIsValidated(false);
       setFormData((prevData) => ({
         ...initialState,
-        folioSucursalFinal: formData.folioSucursalFinal, 
+        sucursal: prevData.sucursal,  // Mantener la sucursal seleccionada
+        folioSucursalFinal: formData.folioSucursalFinal,  // Solo actualizar el folio
       }));
       localStorage.removeItem('formData');
     }
@@ -683,7 +687,7 @@ export const InvoiceForm = () => {
           <select
             name="sucursal"
             value={formData.sucursal}
-            onChange={handleChange}
+            onChange={handleSucursalChange}
             className="bg-gray-300 mt-1 block w-full border border-gray-300 rounded-md p-1"
           >
             <option value="">Selecciona una sucursal</option>
@@ -700,7 +704,7 @@ export const InvoiceForm = () => {
               type="text"
               name="folioSucursalFinal"
               value={formData.folioSucursalFinal} 
-              onChange={handleChange}
+              onChange={handleFolioChange} 
               className="bg-gray-300 mt-1 block w-full border border-gray-300 rounded-md p-1"
             />
           </div>

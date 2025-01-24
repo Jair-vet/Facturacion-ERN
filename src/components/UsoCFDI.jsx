@@ -44,6 +44,18 @@ export const UsoCFDI = memo(({ cfdi = '', setFormData, onUpdateCodigoCFDI }) => 
         cfdiCode: selectedItem.codigoCFDI, // Lo mismo para cfdiCode
       });
       
+      // Agregamos al Storage
+      const updatedFormData = {
+        ...JSON.parse(localStorage.getItem('formData')),
+        usoCFDI: selectedItem.codigoCFDI,  
+        usoCfdi: selectedItem.codigoCFDI,  
+        cfdi: selectedItem.codigoCFDI === '00' ? '' : selectedItem.cfdi,
+        codigoCFDI: selectedItem.codigoCFDI, // Código CFDI
+        cfdiCode: selectedItem.codigoCFDI, // Lo mismo para cfdiCode
+      };
+
+      localStorage.setItem('formData', JSON.stringify(updatedFormData));
+
       onUpdateCodigoCFDI(selectedItem.codigoCFDI);
     } else {
       // Restablece los valores si no se selecciona un CFDI válido
@@ -54,6 +66,17 @@ export const UsoCFDI = memo(({ cfdi = '', setFormData, onUpdateCodigoCFDI }) => 
         codigoCFDI: '',
         cfdiCode: '',
       });
+
+      // Actualizamos el localStorage también
+      const updatedFormData = {
+        ...JSON.parse(localStorage.getItem('formData')),
+        usoCFDI: '',
+        usoCfdi: '',
+        cfdi: '',
+        codigoCFDI: '',
+        cfdiCode: '',
+      };
+      localStorage.setItem('formData', JSON.stringify(updatedFormData));
     }
   };
 
