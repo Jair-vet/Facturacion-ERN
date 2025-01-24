@@ -152,17 +152,7 @@ export const InvoiceForm = () => {
 
   // Validaciones
   const validateFields = (formData) => {
-    if (!formData.sucursal || !formData.folioSucursalFinal) {
-      Swal.fire({
-        title: 'WARNING',
-        text: 'Por favor, selecciona una sucursal e ingresa un folio',
-        icon: 'warning',
-        iconColor: '#4782f6', 
-        confirmButtonColor: '#007bff',
-      });
-      return false;
-    }
-  
+    
     if (!formData.correo || !formData.correo.trim()) {
       Swal.fire({
         title: 'Correo obligatorio',
@@ -209,9 +199,19 @@ export const InvoiceForm = () => {
   // Cambio del Folio 
   const handleFolioChange = (e) => {
     const folio = e.target.value;
+    console.log("Folio cambiado: ", folio); // Debugging folio
     setFormData((prevData) => ({
       ...prevData,
       folioSucursalFinal: folio,
+    }));
+  };
+
+  const handleSucursalChange = (e) => {
+    const sucursal = e.target.value;
+    console.log("Sucursal cambiada: ", sucursal); // Debugging sucursal
+    setFormData((prevData) => ({
+      ...prevData,
+      sucursal: sucursal,
     }));
   };
 
