@@ -206,8 +206,29 @@ export const InvoiceForm = () => {
     return true;
   };
 
+  // Cambio del Folio 
+  const handleFolioChange = (e) => {
+    const folio = e.target.value;
+    setFormData((prevData) => ({
+      ...prevData,
+      folioSucursalFinal: folio,
+    }));
+  };
+
+  // Cada vez que cambie el folio, resetear todo lo demás
+  useEffect(() => {
+    if (formData.folioSucursalFinal) {
+      setIsValidated(false);
+      setFormData((prevData) => ({
+        ...initialState,
+        folioSucursalFinal: formData.folioSucursalFinal, 
+      }));
+      localStorage.removeItem('formData');
+    }
+  }, [formData.folioSucursalFinal]);
   // 22012512103882
 
+  // Mandamos Folio y Sucursal para traernos Data
   const handleSubmit = async (e) => {
     e.preventDefault();
 
