@@ -153,7 +153,8 @@ export const InvoiceForm = () => {
   // Validaciones
   const validateFields = (formData) => {
     
-    if (!formData.correo || !formData.correo.trim()) {
+    const storedFormData = JSON.parse(localStorage.getItem('formData'));
+    if (!storedFormData.correo || !storedFormData.correo.trim()) {
       Swal.fire({
         title: 'Correo obligatorio',
         text: 'Por favor, ingresa un correo electrónico válido.',
@@ -405,15 +406,30 @@ export const InvoiceForm = () => {
   
 
   const handleChange = (e) => {
-
     const { name, value } = e.target;
-    setFormData({
-      ...formData,
-      [name]: value
+    
+    setFormData((prevFormData) => {
+      const updatedFormData = {
+        ...prevFormData,
+        [name]: value, // Actualizar el valor del campo correspondiente
+      };
+  
+      // Guardar siempre en localStorage cuando el usuario cambie cualquier campo
+      localStorage.setItem('formData', JSON.stringify(updatedFormData));
+  
+      return updatedFormData;
     });
   };
-
   
+
+  // Guardar datos 
+  useEffect(() => {
+    const savedFormData = localStorage.getItem('formData');
+    if (savedFormData) {
+      setFormData(JSON.parse(savedFormData));
+    }
+  }, []);
+
   const handleGenerateFactura = async (
     e,
     formData, 
@@ -423,9 +439,15 @@ export const InvoiceForm = () => {
     setXml, 
     setIsInvoiceGenerated
   ) => {
-    // Validación de los Campos
-    if (!validateFields(formData)) {
-      return; 
+    // Recuperar formData del localStorage
+    const storedFormData = JSON.parse(localStorage.getItem('formData'));
+
+    // Mostrar formData para depuración (obtenido del localStorage)
+    console.log('Enviando a la API con los siguientes datos:', JSON.stringify(storedFormData, null, 2));
+
+    // Validación de los campos desde formData (del localStorage)
+    if (!validateFields(storedFormData)) {
+      return;
     }
   
     setIsLoading(true);
@@ -434,7 +456,7 @@ export const InvoiceForm = () => {
   
     try {
       // Primero, generar la factura
-      const response = await axios.post('https://www.binteapi.com:8085/src/cfdi40.php', formData); // Usar formData aquí
+      const response = await axios.post('https://www.binteapi.com:8085/src/cfdi40.php', storedFormData); // Usar formData aquí
   
       if (response.status === 200) {
         Swal.fire('Factura Generada', 'La factura se ha generado correctamente', 'success')
