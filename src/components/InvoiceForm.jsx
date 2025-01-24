@@ -322,7 +322,7 @@ export const InvoiceForm = () => {
           })),
           Base_iva: result.venta.subtotal,
           importe_iva: result.venta.iva,
-          correo: result.cliente.correo,
+          correo: result.cliente.correo || '',
           cp: result.cliente.cp,
           regimenFiscal: result.cliente.regimenfiscal,
           metodoPago: result.venta.formapago,
