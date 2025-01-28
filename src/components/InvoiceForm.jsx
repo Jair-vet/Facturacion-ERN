@@ -107,7 +107,13 @@ export const InvoiceForm = () => {
     correo_sucursal: '',
   };
 
-  const [formData, setFormData] = useState(initialState);
+  // Cargar datos del localStorage o usar el initialState si no hay datos en el localStorage
+  const [formData, setFormData] = useState(() => {
+    const savedFormData = localStorage.getItem('formData');
+    return savedFormData ? JSON.parse(savedFormData) : initialState;
+  });
+
+  // const [formData, setFormData] = useState(initialState);
   const [isValidated, setIsValidated] = useState(false);
   const [sucursales, setSucursales] = useState([]);
   const [salidas, setSalidas] = useState([]);
@@ -123,6 +129,10 @@ export const InvoiceForm = () => {
   const [errors, setErrors] = useState({});
   const [cfdi, setCfdi] = useState('');
 
+
+  useEffect(() => {
+    localStorage.setItem('formData', JSON.stringify(formData));
+  }, [formData]);
 
   // Va por las sucursales segun la url 
   useEffect(() => {
@@ -219,7 +229,7 @@ export const InvoiceForm = () => {
     }));
   };
 
-  // Cada vez que cambie el folio, resetear todo lo demás
+  // Cada vez que cambie el folio, se limpia todo lo demás (manteniendo la sucursal)
   useEffect(() => {
     if (formData.folioSucursalFinal) {
       setIsValidated(false);
@@ -231,7 +241,7 @@ export const InvoiceForm = () => {
       localStorage.removeItem('formData');
     }
   }, [formData.folioSucursalFinal]);
-  // 22012512103882
+
 
   // Mandamos Folio y Sucursal para traernos Data
   const handleSubmit = async (e) => {
@@ -418,7 +428,6 @@ export const InvoiceForm = () => {
         [name]: value, // Actualizar el valor del campo correspondiente
       };
   
-      // Guardar siempre en localStorage cuando el usuario cambie cualquier campo
       localStorage.setItem('formData', JSON.stringify(updatedFormData));
   
       return updatedFormData;
@@ -643,16 +652,6 @@ export const InvoiceForm = () => {
     }
   };
 
-  // useEffect(() => {
-  //   // Imprimir el formData como cadena JSON cada vez que cambie
-  //   console.log("formData actualizado:", JSON.stringify(formData, null, 2)); 
-  //   // Guardamos el formData actualizado en el localStorage
-  //   localStorage.setItem('formData', JSON.stringify(formData));
-  // }, [formData]);
-  
-  // https://binteapi.com:8095/api/sucursales/http://localhost:5173/factura-ERN/
-
-
   useEffect(() => {
     setFormData(prevData => ({ ...prevData, folioSucursalFinal: '' }));
   }, []);
@@ -673,6 +672,19 @@ export const InvoiceForm = () => {
   const closeModal = () => {
     setIsModalOpen(false);
   };
+
+  // Limpia Folio cuando Factura se genera
+  useEffect(() => {
+    // Limpiar el campo de folio cuando se genera la factura
+    if (isInvoiceGeneratedAndSended) {
+      console.log("Factura generada, limpiando el folio...");
+      setFormData((prevData) => ({
+        ...prevData,
+        folioSucursalFinal: '',
+        folio: ''
+      }));
+    }
+  }, [isInvoiceGeneratedAndSended]);
 
   
   return (
@@ -916,11 +928,12 @@ export const InvoiceForm = () => {
               {/* Botón para Descargar PDF */}
               <div>
                 <button
-                    className="w-full bg-[#365326] text-white px-4 py-2 mt-4 hover:bg-[#3e662a] rounded-3xl uppercase"
-                    onClick={() => {
-                      console.log('Abriendo PDF:', pdfUrl); // Para depuración
+                  className="w-full bg-[#365326] text-white px-4 py-2 mt-4 hover:bg-[#3e662a] rounded-3xl uppercase"
+                  onClick={() => {
+                    if (pdfUrl) {
                       window.open(pdfUrl, '_blank');
-                    }}
+                    }
+                  }}
                   >
                     Descargar Factura
                 </button>
