@@ -208,37 +208,41 @@ export const InvoiceForm = () => {
   };
 
   // Cambio del Folio 
-  const handleFolioChange = (e) => {
-    e.preventDefault()
-    const folio = e.target.value;
-    console.log("Folio cambiado: ", folio); // Debugging folio
+  // const handleFolioChange = (e) => {
+  //   e.preventDefault()
+  //   const folio = e.target.value;
+  //   console.log("Folio cambiado: ", folio); // Debugging folio
   
-    // Solo actualizamos el folio, sin modificar la sucursal
-    setFormData((prevData) => ({
-      ...prevData,
-      folioSucursalFinal: folio,
-    }));
-  };
+  //   // Solo actualizamos el folio, sin modificar la sucursal
+  //   setFormData((prevData) => ({
+  //     ...prevData,
+  //     folioSucursalFinal: folio,
+  //   }));
+  // };
 
-  const handleSucursalChange = (e) => {
-    const sucursal = e.target.value;
-    console.log("Sucursal cambiada: ", sucursal); // Debugging sucursal
-    setFormData((prevData) => ({
-      ...prevData,
-      sucursal: sucursal,
-    }));
-  };
+  // const handleSucursalChange = (e) => {
+  //   const sucursal = e.target.value;
+  //   console.log("Sucursal cambiada: ", sucursal);
+  //   setFormData((prevData) => ({
+  //     ...prevData,
+  //     sucursal: sucursal,
+  //   }));
+  // };
 
   // Cada vez que cambie el folio, se limpia todo lo demás (manteniendo la sucursal)
   useEffect(() => {
     if (formData.folioSucursalFinal) {
       setIsValidated(false);
+      setIsInvoiceGenerated(false);
       setFormData((prevData) => ({
         ...initialState,
-        sucursal: prevData.sucursal,  // Mantener la sucursal seleccionada
-        folioSucursalFinal: formData.folioSucursalFinal,  // Solo actualizar el folio
+        sucursal: prevData.sucursal,
+        folioSucursalFinal: formData.folioSucursalFinal,
       }));
-      localStorage.removeItem('formData');
+      localStorage.setItem('formData', JSON.stringify({
+        sucursal: formData.sucursal,
+        folioSucursalFinal: formData.folioSucursalFinal,
+      }));
     }
   }, [formData.folioSucursalFinal]);
 
@@ -248,11 +252,14 @@ export const InvoiceForm = () => {
     e.preventDefault();
 
     if (!formData.folioSucursalFinal) {
-      localStorage.removeItem('formData'); // Limpiar el localStorage
-      setFormData(initialState); // Limpiar el state
-      setIsValidated(false); // Deshabilitar la validación
+      localStorage.removeItem('formData'); 
+      setFormData(initialState); 
+      setIsValidated(false); 
       return;
     }
+    console.log('Sucursal:', formData.sucursal);
+    console.log('Folio:', formData.folioSucursalFinal);
+    
 
     setIsLoading(true);
     const url = `https://binteapi.com:8095/api/ventas/${formData.sucursal}/${formData.folioSucursalFinal}/`;
@@ -421,15 +428,30 @@ export const InvoiceForm = () => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    
     setFormData((prevFormData) => {
       const updatedFormData = {
         ...prevFormData,
-        [name]: value, // Actualizar el valor del campo correspondiente
+        [name]: value,
       };
-  
+      
+      if (name === "sucursal") {
+        localStorage.setItem('sucursal', value);
+      }
+
+      if (name === "rfc_receptor") {
+        updatedFormData.rfc = value;
+      }
+      if (name === "razonSocial") {
+        updatedFormData.razonSocial_receptor = value;
+      }
+      if (name === "cp") {
+        updatedFormData.domicilioFiscal_receptor = value;
+      }
+      if (name === "regimenFiscal") {
+        updatedFormData.regimenFiscal_receptor = value;
+      }
+      
       localStorage.setItem('formData', JSON.stringify(updatedFormData));
-  
       return updatedFormData;
     });
   };
@@ -437,93 +459,68 @@ export const InvoiceForm = () => {
 
   // Guardar datos 
   useEffect(() => {
-    const savedFormData = localStorage.getItem('formData');
-    if (savedFormData) {
-      setFormData(JSON.parse(savedFormData));
+    const savedSucursal = localStorage.getItem('sucursal');
+    if (savedSucursal) {
+      setFormData((prevFormData) => ({
+        ...prevFormData,
+        sucursal: savedSucursal,
+      }));
     }
   }, []);
 
-  const handleGenerateFactura = async (
-    e,
-    formData, 
-    setIsLoading, 
-    setFormData, 
-    setPdf, 
-    setXml, 
-    setIsInvoiceGenerated
-  ) => {
-    // Recuperar formData del localStorage
-    const storedFormData = JSON.parse(localStorage.getItem('formData'));
+  const handleGenerateFactura = async ( e,formData, setIsLoading, setFormData, setPdf, setXml, setIsInvoiceGenerated ) => {
 
-    // Mostrar formData para depuración (obtenido del localStorage)
-    console.log('Enviando a la API con los siguientes datos:', JSON.stringify(storedFormData, null, 2));
+    const storedFormData = JSON.parse(localStorage.getItem('formData')) || {};
+    const payload = { ...storedFormData, ...formData };
+
+    console.log('🚀 Enviando a la API con los siguientes datos:', JSON.stringify(payload, null, 2));
 
     // Validación de los campos desde formData (del localStorage)
     if (!validateFields(storedFormData)) {
       return;
     }
-  
-    setIsLoading(true);
-  
+
+    setIsLoading(true);  
     let baseUrl = `https://sgp-web.nyc3.cdn.digitaloceanspaces.com/sgp-web/${formData.url_carpeta_facturacion}/${formData.factura}`;
   
     try {
       // Primero, generar la factura
-      const response = await axios.post('https://www.binteapi.com:8085/src/cfdi40.php', storedFormData); // Usar formData aquí
-  
-      if (response.status === 200) {
-        Swal.fire('Factura Generada', 'La factura se ha generado correctamente', 'success')
-          .then(async (result) => {
-            if (result.isConfirmed) {
-              // Extraer los paths para el PDF, XML y UUID de la respuesta
-              const { path_pdf, path_xml, UUID } = response.data;
-              const pdfUrl = `${baseUrl}/${path_pdf}.pdf`; // Asegúrate de concatenar correctamente la ruta
-              const xmlUrl = `${baseUrl}/${path_xml}.xml`; // Asegúrate de concatenar correctamente la ruta
-  
-              // Actualizar el estado con las URLs
-              setPdf(pdfUrl);
-              setXml(xmlUrl);
-  
-              // Ahora que tenemos las rutas, procedemos a guardar la factura en la base de datos
-              const sucursal = encodeURIComponent(formData.sucursal.trim());
-              const folioTicket = encodeURIComponent(formData.folioSucursalFinal.trim());
-              const saveFacturaUrl = `https://binteapi.com:8095/api/factura/${sucursal}/${folioTicket}/`;
-  
-              try {
-                const saveResponse = await axios.put(saveFacturaUrl, {
-                  path_pdf: `ern-melaminas/${path_pdf}`,
-                  path_xml: `ern-melaminas/${path_xml}`,
-                  UUID
-                });
-  
-                if (saveResponse.status === 200 && saveResponse.data?.id) {
-                  Swal.fire('Factura Guardada', 'La factura ha sido guardada en la base de datos correctamente', 'success');
-                  setIsInvoiceGenerated(true); // Marcar factura como generada
-                } else {
-                  Swal.fire({
-                    title: 'UPPPS!!',
-                    text: saveResponse.data?.message || 'Error al guardar la factura en la base de datos',
-                    icon: 'WARNING',
-                    iconColor: '#4782f6', 
-                    confirmButtonColor: '#007bff',
-                  });
-                }
-              } catch (saveError) {
-                const saveErrorMessage = saveError.response?.data?.error || 'Error al guardar la factura en la base de datos';
-                console.error('Error al guardar la factura:', saveErrorMessage);
-                Swal.fire({
-                  title: 'UPPPS!!',
-                  text: saveErrorMessage,
-                  icon: 'WARNING',
-                  iconColor: '#4782f6', 
-                  confirmButtonColor: '#007bff',
-                });
-              }
-            }
-          });
-      } else {
-        Swal.fire('Error', 'Hubo un problema al generar la factura', 'error');
+      // const response = await axios.post('https://www.binteapi.com:8085/src/cfdi40.php', storedFormData); 
+      const response = await fetch('https://www.binteapi.com:8085/src/cfdi40.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await response.json();
+      console.log('✅ Respuesta API Factura:', data);
+
+      if (!data.path_pdf || !data.path_xml || !data.UUID) {
+        throw new Error('❌ Datos incompletos en la respuesta de la factura');
       }
+
+      const pdfUrl = `https://sgp-web.nyc3.digitaloceanspaces.com/sgp-web/${data.path_pdf}`;
+      const xmlUrl = `https://sgp-web.nyc3.digitaloceanspaces.com/sgp-web/${data.path_xml}`;
+  
+      setPdf(pdfUrl);
+      setXml(xmlUrl);
+
+      const updatedFormData = { ...payload, path_pdf: data.path_pdf, path_xml: data.path_xml, UUID: data.UUID };
+      localStorage.setItem('formData', JSON.stringify(updatedFormData));
+
+      // Guardar la factura
+      const saveFacturaUrl = `https://binteapi.com:8095/api/factura/${storedFormData.sucursal}/${storedFormData.folioSucursalFinal}/`;
+      const saveResponse = await fetch(saveFacturaUrl, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedFormData)
+      });
+
+      const saveData = await saveResponse.json();
+      console.log('📤 Respuesta API de guardado:', saveData);
+
+      Swal.fire('Factura Generada', 'La factura ha sido generada y guardada correctamente', 'success');
+      setIsInvoiceGenerated(true);
     } catch (error) {
       const errorMessage = error.response?.data?.message || 'Error al generar la factura';
       console.error('Error en la generación de factura:', errorMessage);
@@ -538,6 +535,60 @@ export const InvoiceForm = () => {
       setIsLoading(false);
     }
   };
+
+  // if (response.status === 200) {
+      //   Swal.fire('Factura Generada', 'La factura se ha generado correctamente', 'success')
+      //     .then(async (result) => {
+      //       if (result.isConfirmed) {
+      //         // Extraer los paths para el PDF, XML y UUID de la respuesta
+      //         const { path_pdf, path_xml, UUID } = response.data;
+      //         const pdfUrl = `${baseUrl}/${path_pdf}.pdf`; // Asegúrate de concatenar correctamente la ruta
+      //         const xmlUrl = `${baseUrl}/${path_xml}.xml`; // Asegúrate de concatenar correctamente la ruta
+  
+      //         // Actualizar el estado con las URLs
+      //         setPdf(pdfUrl);
+      //         setXml(xmlUrl);
+  
+      //         // Ahora que tenemos las rutas, procedemos a guardar la factura en la base de datos
+      //         const sucursal = encodeURIComponent(formData.sucursal.trim());
+      //         const folioTicket = encodeURIComponent(formData.folioSucursalFinal.trim());
+      //         const saveFacturaUrl = `https://binteapi.com:8095/api/factura/${sucursal}/${folioTicket}/`;
+  
+      //         try {
+      //           const saveResponse = await axios.put(saveFacturaUrl, {
+      //             path_pdf: `ern-melaminas/${path_pdf}`,
+      //             path_xml: `ern-melaminas/${path_xml}`,
+      //             UUID
+      //           });
+  
+      //           if (saveResponse.status === 200 && saveResponse.data?.id) {
+      //             Swal.fire('Factura Guardada', 'La factura ha sido guardada en la base de datos correctamente', 'success');
+      //             setIsInvoiceGenerated(true); // Marcar factura como generada
+      //           } else {
+      //             Swal.fire({
+      //               title: 'UPPPS!!',
+      //               text: saveResponse.data?.message || 'Error al guardar la factura en la base de datos',
+      //               icon: 'WARNING',
+      //               iconColor: '#4782f6', 
+      //               confirmButtonColor: '#007bff',
+      //             });
+      //           }
+      //         } catch (saveError) {
+      //           const saveErrorMessage = saveError.response?.data?.error || 'Error al guardar la factura en la base de datos';
+      //           console.error('Error al guardar la factura:', saveErrorMessage);
+      //           Swal.fire({
+      //             title: 'UPPPS!!',
+      //             text: saveErrorMessage,
+      //             icon: 'WARNING',
+      //             iconColor: '#4782f6', 
+      //             confirmButtonColor: '#007bff',
+      //           });
+      //         }
+      //       }
+      //     });
+      // } else {
+      //   Swal.fire('Error', 'Hubo un problema al generar la factura', 'error');
+      // }
   
   const handleSendInvoiceEmail = async (
     formData, 
@@ -546,10 +597,32 @@ export const InvoiceForm = () => {
     setIsLoading
   ) => {
 
+    const storedFormData = JSON.parse(localStorage.getItem('formData')) || formData;
+
     if (!isInvoiceGenerated) {
       Swal.fire('No hay factura generada', 'Primero debes generar la factura antes de enviarla por correo.');
       return;
     }
+
+    if (!pdfUrl || !xmlUrl) {
+      Swal.fire('Archivos no disponibles', 'No se encontraron los archivos de la factura. Asegúrate de que la factura fue generada correctamente.', 'error');
+      return;
+    }
+
+    console.log('Enviando correo con los siguientes datos:', {
+      to_email: storedFormData.correo,
+      to_name: storedFormData.razonSocial,
+      from_email: storedFormData.correo_sucursal,
+      from_name: 'Factura',
+      vars_submit: {
+          logo: storedFormData.rutaLogotipo,
+          Cliente: storedFormData.cliente,
+          Emisor: storedFormData.razonSocial_emisor,
+          Serie: 'F',
+          Folio: storedFormData.folioSucursalFinal,
+          correo: storedFormData.correo_sucursal,
+      }
+  })
     
     setIsLoading(true);
   
@@ -575,18 +648,18 @@ export const InvoiceForm = () => {
   
       // Preparar los datos para la solicitud
       const emailData = {
-        to_email: formData.correo, // correo del cliente
-        to_name: formData.razonSocial, // razón social del cliente
+        to_email: storedFormData.correo, 
+        to_name: storedFormData.razonSocial, 
         number_template: 4178982,
-        from_email: formData.correo_sucursal, // correo de la sucursal
+        from_email: storedFormData.correo_sucursal, 
         from_name: "Factura",
         vars_submit: {
-          logo: formData.rutaLogotipo, // ruta del logotipo de la sucursal
-          Cliente: formData.cliente, // razón social del cliente
-          Emisor: formData.razonSocial_emisor, // razón social de la sucursal
-          Serie: "F", // serie de la factura
-          Folio: formData.folioSucursalFinal, // folio de la factura
-          correo: formData.correo_sucursal, // correo de la sucursal
+          logo: storedFormData.rutaLogotipo, 
+          Cliente: storedFormData.cliente, 
+          Emisor: storedFormData.razonSocial_emisor, 
+          Serie: "F",
+          Folio: storedFormData.folioSucursalFinal, 
+          correo: storedFormData.correo_sucursal, 
         },
         more_emails: [],
         with_copy_emails: [],
@@ -636,8 +709,8 @@ export const InvoiceForm = () => {
           confirmButtonColor: '#007bff'
         });
       }
-      localStorage.removeItem('formData');
-      console.log('localStorage limpiado');
+      // localStorage.removeItem('formData');
+      // console.log('localStorage limpiado');
     } catch (error) {
       const errorMessage = error.response?.data?.message || 'Error al enviar el correo';
       Swal.fire({
@@ -656,13 +729,13 @@ export const InvoiceForm = () => {
     setFormData(prevData => ({ ...prevData, folioSucursalFinal: '' }));
   }, []);
 
-  useEffect(() => {
-    // Limpiar el campo de folio cuando se genera la factura
-    if (isInvoiceGeneratedAndSended) {
-      console.log("Factura generada, limpiando el folio...");
-      setFormData(prevData => ({ ...prevData, folioSucursalFinal: '', folio: '' }));
-    }
-  }, [isInvoiceGeneratedAndSended]);
+  // useEffect(() => {
+  //   // Limpiar el campo de folio cuando se genera la factura
+  //   if (isInvoiceGeneratedAndSended) {
+  //     console.log("Factura generada, limpiando el folio...");
+  //     setFormData(prevData => ({ ...prevData, folioSucursalFinal: '', folio: '' }));
+  //   }
+  // }, [isInvoiceGeneratedAndSended]);
 
   const handleIconClick = (src) => {
     setImageSrc(src);
@@ -674,17 +747,17 @@ export const InvoiceForm = () => {
   };
 
   // Limpia Folio cuando Factura se genera
-  useEffect(() => {
-    // Limpiar el campo de folio cuando se genera la factura
-    if (isInvoiceGeneratedAndSended) {
-      console.log("Factura generada, limpiando el folio...");
-      setFormData((prevData) => ({
-        ...prevData,
-        folioSucursalFinal: '',
-        folio: ''
-      }));
-    }
-  }, [isInvoiceGeneratedAndSended]);
+  // useEffect(() => {
+  //   // Limpiar el campo de folio cuando se genera la factura
+  //   if (isInvoiceGeneratedAndSended) {
+  //     console.log("Factura generada, limpiando el folio...");
+  //     setFormData((prevData) => ({
+  //       ...prevData,
+  //       folioSucursalFinal: '',
+  //       folio: ''
+  //     }));
+  //   }
+  // }, [isInvoiceGeneratedAndSended]);
 
   
   return (
@@ -699,7 +772,7 @@ export const InvoiceForm = () => {
           <select
             name="sucursal"
             value={formData.sucursal}
-            onChange={handleSucursalChange}
+            onChange={handleChange}
             className="bg-gray-300 mt-1 block w-full border border-gray-300 rounded-md p-1"
           >
             <option value="">Selecciona una sucursal</option>
@@ -716,7 +789,7 @@ export const InvoiceForm = () => {
               type="text"
               name="folioSucursalFinal"
               value={formData.folioSucursalFinal} 
-              onChange={handleFolioChange} 
+              onChange={handleChange} 
               className="bg-gray-300 mt-1 block w-full border border-gray-300 rounded-md p-1"
             />
           </div>
@@ -770,11 +843,24 @@ export const InvoiceForm = () => {
                 name="razonSocial"
                 value={formData.razonSocial}
                 onChange={handleChange}
+                onBlur={() => {
+                  if (formData.razonSocial_receptor.trim() !== '') {
+                    setFormData((prevFormData) => {
+                      const updatedFormData = {
+                        ...prevFormData,
+                        razonSocial: formData.razonSocial_receptor,
+                      };
+                      localStorage.setItem('formData', JSON.stringify(updatedFormData));
+                      return updatedFormData;
+                    });
+                  }
+                }}
                 className="bg-gray-300 mt-1 block w-full border border-gray-300 rounded-md p-1"
               />
             </div>
           
             <div className="parent grid grid-cols-1 md:grid-cols-7 gap-x-1 gap-y-0">
+              {/* RFC */}
               <div className="w-full md:col-span-2">
                 <label className="block text-sm font-medium text-gray-700">RFC:</label>
                 <input
@@ -782,6 +868,18 @@ export const InvoiceForm = () => {
                   name="rfc_receptor"
                   value={formData.rfc_receptor}
                   onChange={handleChange}
+                  onBlur={() => {
+                    if (formData.rfc_receptor.trim() !== '') {
+                      setFormData((prevFormData) => {
+                        const updatedFormData = {
+                          ...prevFormData,
+                          rfc: formData.rfc_receptor,
+                        };
+                        localStorage.setItem('formData', JSON.stringify(updatedFormData));
+                        return updatedFormData;
+                      });
+                    }
+                  }}
                   className="bg-gray-300 mt-1 block w-full border border-gray-300 rounded-md p-1"
                 />
               </div>
@@ -793,6 +891,18 @@ export const InvoiceForm = () => {
                   name="regimenFiscal"
                   value={formData.regimenFiscal}
                   onChange={handleChange}
+                  onBlur={() => {
+                    if (formData.regimenFiscal.trim() !== '') {
+                      setFormData((prevFormData) => {
+                        const updatedFormData = {
+                          ...prevFormData,
+                          regimenFiscal_receptor : formData.regimenFiscal,
+                        };
+                        localStorage.setItem('formData', JSON.stringify(updatedFormData));
+                        return updatedFormData;
+                      });
+                    }
+                  }}
                   className="bg-gray-300 mt-1 block w-full border border-gray-300 rounded-md p-1"
                 />
               </div>
@@ -804,6 +914,18 @@ export const InvoiceForm = () => {
                   name="cp"
                   value={formData.cp}
                   onChange={handleChange}
+                  onBlur={() => {
+                    if (formData.cp.trim() !== '') {
+                      setFormData((prevFormData) => {
+                        const updatedFormData = {
+                          ...prevFormData,
+                          domicilioFiscal_receptor: formData.cp,
+                        };
+                        localStorage.setItem('formData', JSON.stringify(updatedFormData));
+                        return updatedFormData;
+                      });
+                    }
+                  }}
                   className="bg-gray-300 mt-1 block w-full border border-gray-300 rounded-md p-1"
                 />
               </div>
@@ -929,13 +1051,21 @@ export const InvoiceForm = () => {
               <div>
                 <button
                   className="w-full bg-[#365326] text-white px-4 py-2 mt-4 hover:bg-[#3e662a] rounded-3xl uppercase"
+                  title="Descargar factura en formato PDF"
                   onClick={() => {
                     if (pdfUrl) {
                       window.open(pdfUrl, '_blank');
+                    } else {
+                      Swal.fire({
+                        title: 'Error',
+                        text: 'No se encontró la URL del PDF. Asegúrate de que la factura ha sido generada correctamente.',
+                        icon: 'error',
+                        confirmButtonColor: '#007bff',
+                      });
                     }
                   }}
-                  >
-                    Descargar Factura
+                >
+                  Descargar Factura
                 </button>
               </div>
 
@@ -957,4 +1087,3 @@ export const InvoiceForm = () => {
     </form>
   );
 };
-
