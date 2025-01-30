@@ -471,14 +471,14 @@ export const InvoiceForm = () => {
 
   const handleGenerateFactura = async ( e,formData, setIsLoading, setFormData, setPdf, setXml, setIsInvoiceGenerated ) => {
 
-    const storedFormData = JSON.parse(localStorage.getItem('formData')) || {};
-    const payload = { ...storedFormData, ...formData };
-
-    console.log('🚀 Enviando a la API con los siguientes datos:', JSON.stringify(payload, null, 2));
-
-    setIsLoading(true);  
+    setIsLoading(true);
 
     try {
+      const storedFormData = JSON.parse(localStorage.getItem('formData')) || {};
+      const payload = { ...storedFormData, ...formData };
+  
+      console.log('🚀 Enviando a la API con los siguientes datos:', JSON.stringify(payload, null, 2));
+  
       // 1️⃣ 🔥 **Generar la factura**
       // const response = await axios.post('https://www.binteapi.com:8085/src/cfdi40.php', storedFormData); 
       const response = await fetch('https://www.binteapi.com:8085/src/cfdi40.php', {
@@ -1051,8 +1051,8 @@ export const InvoiceForm = () => {
                   setXml, 
                   setIsInvoiceGenerated
                 )}
-                disabled={isLoading}
-                style={{ display: isInvoiceGenerated ? 'none' : 'block' }} 
+                disabled={isLoading} 
+                style={{ display: isInvoiceGenerated ? 'none' : 'block' }} // Ocultar después de generar
               >
                 {isLoading ? 'Generando...' : 'Generar Factura'}
               </button>
