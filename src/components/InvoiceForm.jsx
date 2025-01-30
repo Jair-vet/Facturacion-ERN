@@ -338,8 +338,7 @@ export const InvoiceForm = () => {
           metodoPagoDescripcion: result.venta.formapago,
           url_carpeta_facturacion: result.rutas.url_carpeta_facturacion,
           factura: result.factura.factura,
-          correo_sucursal: result.rutas.email_envio_facturcion || 'jair@test.com',
-          email_envio_facturcion: result.rutas.email_envio_facturcion,
+          correo_sucursal: result.rutas.email_envio_facturacion || '',
         };
 
         setFormData(updatedFormData);
@@ -483,6 +482,10 @@ export const InvoiceForm = () => {
       }
   
       console.log('✅ Respuesta API Factura:', data);
+
+      if (data.code === 400) {
+        throw new Error(`❌ Error API: ${data.message || 'Error desconocido en la generación de la factura.'}`);
+      }
   
       // 5️⃣ **Validar respuesta**
       if (!data.path_pdf || !data.path_xml || !data.UUID) {
