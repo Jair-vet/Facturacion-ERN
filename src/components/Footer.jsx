@@ -15,7 +15,7 @@ export const Footer = () => {
               Aviso de Privacidad
             </a>
           </p>
-          <p className="text-gray-400">V. 1.0.9</p>
+          <p className="text-gray-400">V. 1.0.10</p>
         </div>
         <p className="text-white text-lg flex items-center">
           Desarrollado por:
