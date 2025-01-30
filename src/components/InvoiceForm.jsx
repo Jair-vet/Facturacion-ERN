@@ -475,16 +475,10 @@ export const InvoiceForm = () => {
 
     console.log('🚀 Enviando a la API con los siguientes datos:', JSON.stringify(payload, null, 2));
 
-    // Validación de los campos desde formData (del localStorage)
-    if (!validateFields(storedFormData)) {
-      return;
-    }
-
     setIsLoading(true);  
-    let baseUrl = `https://sgp-web.nyc3.cdn.digitaloceanspaces.com/sgp-web/${formData.url_carpeta_facturacion}/${formData.factura}`;
-  
+
     try {
-      // Primero, generar la factura
+      // 1️⃣ 🔥 **Generar la factura**
       // const response = await axios.post('https://www.binteapi.com:8085/src/cfdi40.php', storedFormData); 
       const response = await fetch('https://www.binteapi.com:8085/src/cfdi40.php', {
         method: 'POST',
@@ -508,7 +502,7 @@ export const InvoiceForm = () => {
       const updatedFormData = { ...payload, path_pdf: data.path_pdf, path_xml: data.path_xml, UUID: data.UUID };
       localStorage.setItem('formData', JSON.stringify(updatedFormData));
 
-      // Guardar la factura
+      // 2️⃣ 💾 **Guardar la factura en la base de datos**
       const saveFacturaUrl = `https://binteapi.com:8095/api/factura/${storedFormData.sucursal}/${storedFormData.folioSucursalFinal}/`;
       const saveResponse = await fetch(saveFacturaUrl, {
         method: 'PUT',
@@ -519,18 +513,32 @@ export const InvoiceForm = () => {
       const saveData = await saveResponse.json();
       console.log('📤 Respuesta API de guardado:', saveData);
 
-      Swal.fire('Factura Generada', 'La factura ha sido generada y guardada correctamente', 'success');
+      if (!saveResponse.ok) {
+        throw new Error('❌ Error al guardar la factura en la base de datos');
+      }
+
+      // ✅ **Factura generada correctamente**
       setIsInvoiceGenerated(true);
-    } catch (error) {
-      const errorMessage = error.response?.data?.message || 'Error al generar la factura';
-      console.error('Error en la generación de factura:', errorMessage);
+
       Swal.fire({
-        title: 'UPPPS!!',
-        text: errorMessage,
-        icon: 'WARNING',
-        iconColor: '#4782f6', 
-        confirmButtonColor: '#007bff',
+        title: '✅ Factura Generada',
+        text: 'La factura ha sido generada y guardada correctamente',
+        icon: 'success', 
       });
+
+    } catch (error) {
+      console.error('❌ Error en generación de factura:', error.message);
+
+      // 💥 SOLO mostrar alerta de error si la factura **realmente no se generó**
+      if (!isInvoiceGenerated) {
+        Swal.fire({
+          title: 'UPPPS!!',
+          text: error.message || 'Error al generar la factura',
+          icon: 'error',
+          iconColor: '#4782f6', 
+        confirmButtonColor: '#007bff',
+        });
+      }
     } finally {
       setIsLoading(false);
     }
