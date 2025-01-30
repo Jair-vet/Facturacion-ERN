@@ -5,6 +5,7 @@ import axios from 'axios';
 import { Loader } from './Loader';
 import { UsoCFDI } from './UsoCFDI';
 import Swal from 'sweetalert2';
+import { LoaderFactura } from './LoaderFactura';
 
 const arregloCDFI = [
   { codigoCFDI: 'G01', cfdi: 'ADQUISICIÓN DE MERCANCIAS' },
@@ -517,7 +518,7 @@ export const InvoiceForm = () => {
         throw new Error('❌ Error al guardar la factura en la base de datos');
       }
 
-      // ✅ **Factura generada correctamente**
+      // Factura generada correctamente
       setIsInvoiceGenerated(true);
 
       Swal.fire({
@@ -844,208 +845,218 @@ export const InvoiceForm = () => {
       <div>
         {!isInvoiceGenerated && isValidated && (
           <div>
-            <div className="w-full md:col-span-3">
-              <label className="block text-sm font-medium text-gray-700">Razón Social:</label>
-              <input
-                type="text"
-                name="razonSocial"
-                value={formData.razonSocial}
-                onChange={handleChange}
-                onBlur={() => {
-                  if (formData.razonSocial_receptor.trim() !== '') {
-                    setFormData((prevFormData) => {
-                      const updatedFormData = {
-                        ...prevFormData,
-                        razonSocial: formData.razonSocial_receptor,
-                      };
-                      localStorage.setItem('formData', JSON.stringify(updatedFormData));
-                      return updatedFormData;
-                    });
-                  }
-                }}
-                className="bg-gray-300 mt-1 block w-full border border-gray-300 rounded-md p-1"
-              />
-            </div>
-          
-            <div className="parent grid grid-cols-1 md:grid-cols-7 gap-x-1 gap-y-0">
-              {/* RFC */}
-              <div className="w-full md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700">RFC:</label>
-                <input
-                  type="text"
-                  name="rfc_receptor"
-                  value={formData.rfc_receptor}
-                  onChange={handleChange}
-                  onBlur={() => {
-                    if (formData.rfc_receptor.trim() !== '') {
-                      setFormData((prevFormData) => {
-                        const updatedFormData = {
-                          ...prevFormData,
-                          rfc: formData.rfc_receptor,
-                        };
-                        localStorage.setItem('formData', JSON.stringify(updatedFormData));
-                        return updatedFormData;
-                      });
-                    }
-                  }}
-                  className="bg-gray-300 mt-1 block w-full border border-gray-300 rounded-md p-1"
-                />
-              </div>
-              
-              <div className="w-full md:col-start-3 md:col-end-4">
-                <label className="block text-sm font-medium text-gray-700">R. Fiscal:</label>
-                <input
-                  type="number"
-                  name="regimenFiscal"
-                  value={formData.regimenFiscal}
-                  onChange={handleChange}
-                  onBlur={() => {
-                    if (formData.regimenFiscal.trim() !== '') {
-                      setFormData((prevFormData) => {
-                        const updatedFormData = {
-                          ...prevFormData,
-                          regimenFiscal_receptor : formData.regimenFiscal,
-                        };
-                        localStorage.setItem('formData', JSON.stringify(updatedFormData));
-                        return updatedFormData;
-                      });
-                    }
-                  }}
-                  className="bg-gray-300 mt-1 block w-full border border-gray-300 rounded-md p-1"
-                />
-              </div>
-
-              <div className="w-full md:col-start-4 md:col-end-5">
-                <label className="block text-sm font-medium text-gray-700">C.P.:</label>
-                <input
-                  type="number"
-                  name="cp"
-                  value={formData.cp}
-                  onChange={handleChange}
-                  onBlur={() => {
-                    if (formData.cp.trim() !== '') {
-                      setFormData((prevFormData) => {
-                        const updatedFormData = {
-                          ...prevFormData,
-                          domicilioFiscal_receptor: formData.cp,
-                        };
-                        localStorage.setItem('formData', JSON.stringify(updatedFormData));
-                        return updatedFormData;
-                      });
-                    }
-                  }}
-                  className="bg-gray-300 mt-1 block w-full border border-gray-300 rounded-md p-1"
-                />
-              </div>
+            {isLoading ? (
+              <LoaderFactura />
+            ) : (
+              <>
+                <div className="w-full md:col-span-3">
+                  <label className="block text-sm font-medium text-gray-700">Razón Social:</label>
+                  <input
+                    type="text"
+                    name="razonSocial"
+                    value={formData.razonSocial}
+                    onChange={handleChange}
+                    onBlur={() => {
+                      if (formData.razonSocial_receptor.trim() !== '') {
+                        setFormData((prevFormData) => {
+                          const updatedFormData = {
+                            ...prevFormData,
+                            razonSocial: formData.razonSocial_receptor,
+                          };
+                          localStorage.setItem('formData', JSON.stringify(updatedFormData));
+                          return updatedFormData;
+                        });
+                      }
+                    }}
+                    className="bg-gray-300 mt-1 block w-full border border-gray-300 rounded-md p-1"
+                  />
+                </div>
             
-              {/* USO CFDI */}
-              <div className="w-full md:col-start-5 md:col-end-6">
-                <label className="block text-sm font-medium text-gray-700">Código CFDI:</label>
-                <input
-                  type="text"
-                  name="usoCFDI"
-                  value={formData.codigoCFDI || ''} // Fallback a una cadena vacía
-                  readOnly
-                  className="bg-gray-300 mt-1 block w-full border border-gray-300 rounded-md p-1"
-                />
-              </div>
+                <div className="parent grid grid-cols-1 md:grid-cols-7 gap-x-1 gap-y-0">
+                  {/* RFC */}
+                  <div className="w-full md:col-span-2">
+                    <label className="block text-sm font-medium text-gray-700">RFC:</label>
+                    <input
+                      type="text"
+                      name="rfc_receptor"
+                      value={formData.rfc_receptor}
+                      onChange={handleChange}
+                      onBlur={() => {
+                        if (formData.rfc_receptor.trim() !== '') {
+                          setFormData((prevFormData) => {
+                            const updatedFormData = {
+                              ...prevFormData,
+                              rfc: formData.rfc_receptor,
+                            };
+                            localStorage.setItem('formData', JSON.stringify(updatedFormData));
+                            return updatedFormData;
+                          });
+                        }
+                      }}
+                      className="bg-gray-300 mt-1 block w-full border border-gray-300 rounded-md p-1"
+                    />
+                  </div>
+                  
+                  <div className="w-full md:col-start-3 md:col-end-4">
+                    <label className="block text-sm font-medium text-gray-700">R. Fiscal:</label>
+                    <input
+                      type="number"
+                      name="regimenFiscal"
+                      value={formData.regimenFiscal}
+                      onChange={handleChange}
+                      onBlur={() => {
+                        if (formData.regimenFiscal.trim() !== '') {
+                          setFormData((prevFormData) => {
+                            const updatedFormData = {
+                              ...prevFormData,
+                              regimenFiscal_receptor : formData.regimenFiscal,
+                            };
+                            localStorage.setItem('formData', JSON.stringify(updatedFormData));
+                            return updatedFormData;
+                          });
+                        }
+                      }}
+                      className="bg-gray-300 mt-1 block w-full border border-gray-300 rounded-md p-1"
+                    />
+                  </div>
 
-              <div className="w-full md:col-span-2 md:col-start-6">
-                <label className="block text-sm font-medium text-gray-700">Selecciona el CFDI:</label>
-                <select
-                  name="cfdi"
-                  value={formData.cfdi || ''} // Fallback a una cadena vacía
-                  onChange={handleCfdiChange}
-                  className="bg-gray-300 mt-1 block w-full border border-gray-300 rounded-md p-1"
-                >
-                  <option value="">Seleccionar...</option>
-                  {arregloCDFI.map((item) => (
-                    <option key={item.codigoCFDI} value={item.cfdi}>
-                      {item.cfdi}
-                    </option>
-                  ))}
-                </select>
-              </div>
+                  <div className="w-full md:col-start-4 md:col-end-5">
+                    <label className="block text-sm font-medium text-gray-700">C.P.:</label>
+                    <input
+                      type="number"
+                      name="cp"
+                      value={formData.cp}
+                      onChange={handleChange}
+                      onBlur={() => {
+                        if (formData.cp.trim() !== '') {
+                          setFormData((prevFormData) => {
+                            const updatedFormData = {
+                              ...prevFormData,
+                              domicilioFiscal_receptor: formData.cp,
+                            };
+                            localStorage.setItem('formData', JSON.stringify(updatedFormData));
+                            return updatedFormData;
+                          });
+                        }
+                      }}
+                      className="bg-gray-300 mt-1 block w-full border border-gray-300 rounded-md p-1"
+                    />
+                  </div>
+                
+                  {/* USO CFDI */}
+                  <div className="w-full md:col-start-5 md:col-end-6">
+                    <label className="block text-sm font-medium text-gray-700">Código CFDI:</label>
+                    <input
+                      type="text"
+                      name="usoCFDI"
+                      value={formData.codigoCFDI || ''} 
+                      readOnly
+                      className="bg-gray-300 mt-1 block w-full border border-gray-300 rounded-md p-1"
+                    />
+                  </div>
 
-            </div>
+                  <div className="w-full md:col-span-2 md:col-start-6">
+                    <label className="block text-sm font-medium text-gray-700">Selecciona el CFDI:</label>
+                    <select
+                      name="cfdi"
+                      value={formData.cfdi || ''} 
+                      onChange={handleCfdiChange}
+                      className="bg-gray-300 mt-1 block w-full border border-gray-300 rounded-md p-1"
+                    >
+                      <option value="">Seleccionar...</option>
+                      {arregloCDFI.map((item) => (
+                        <option key={item.codigoCFDI} value={item.cfdi}>
+                          {item.cfdi}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
 
-            <div className="parent grid grid-cols-1 md:grid-cols-7 gap-x-1 gap-y-0">
-              <div className="w-full md:col-span-1 hidden md:block">
-                <label className="block text-sm font-medium text-gray-700 mt-7"></label>
-                <input
-                  type="text"
-                  name="metodoPago"
-                  defaultValue={formData.refpago}
-                  className="campo_sin_editar"
-                  readOnly
-                />
-              </div>
-              <div className="w-full md:col-start-2 md:col-end-5">
-                <label className="text-sm font-medium text-gray-700">Método de Pago:</label>
-                <input
-                  name="metodoPagoDescripcion"
-                  defaultValue={formData.metodoPagoDescripcion}
-                  className="campo_sin_editar"
-                  readOnly
-                />
-              </div>
-              <div className="w-full md:col-start-5 md:col-end-6  hidden md:block">
-                <label className="block text-sm font-medium text-gray-700 mt-1">Pago:</label>
-                <input
-                  defaultValue={formData.metodoPago2}
-                  type="text"
-                  className="campo_sin_editar"
-                  readOnly
-                />
-              </div>
-              <div className="w-full md:col-start-6 md:col-span-2 mt-6">
-                <label className="text-sm font-medium text-gray-700"></label>
-                <input
-                  defaultValue={formData.metodoPagoDescripcion2}
-                  type="text"
-                  className="campo_sin_editar"
-                  readOnly
-                />
-              </div>
-            </div>
-          
-            <div className="grid w-full col-span-6 gap-4 mb-2">
-              <div className="w-full md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700">Correo:</label>
-                <input
-                  type="text"
-                  name="correo"
-                  value={formData.correo}
-                  onChange={handleChange}
-                  className="bg-gray-300 mt-1 block w-full border border-gray-300 rounded-md p-1"
-                  onBlur={() => {
-                    // Guardar en localStorage solo cuando el usuario termine de escribir el correo
-                    localStorage.setItem('formData', JSON.stringify(formData));
-                  }}
-                />
-              </div>
-            </div>
+                </div>
+
+                <div className="parent grid grid-cols-1 md:grid-cols-7 gap-x-1 gap-y-0">
+                  <div className="w-full md:col-span-1 hidden md:block">
+                    <label className="block text-sm font-medium text-gray-700 mt-7"></label>
+                    <input
+                      type="text"
+                      name="metodoPago"
+                      defaultValue={formData.refpago}
+                      className="campo_sin_editar"
+                      readOnly
+                    />
+                  </div>
+                  <div className="w-full md:col-start-2 md:col-end-5">
+                    <label className="text-sm font-medium text-gray-700">Método de Pago:</label>
+                    <input
+                      name="metodoPagoDescripcion"
+                      defaultValue={formData.metodoPagoDescripcion}
+                      className="campo_sin_editar"
+                      readOnly
+                    />
+                  </div>
+                  <div className="w-full md:col-start-5 md:col-end-6  hidden md:block">
+                    <label className="block text-sm font-medium text-gray-700 mt-1">Pago:</label>
+                    <input
+                      defaultValue={formData.metodoPago2}
+                      type="text"
+                      className="campo_sin_editar"
+                      readOnly
+                    />
+                  </div>
+                  <div className="w-full md:col-start-6 md:col-span-2 mt-6">
+                    <label className="text-sm font-medium text-gray-700"></label>
+                    <input
+                      defaultValue={formData.metodoPagoDescripcion2}
+                      type="text"
+                      className="campo_sin_editar"
+                      readOnly
+                    />
+                  </div>
+                </div>
+              
+                <div className="grid w-full col-span-6 gap-4 mb-2">
+                  <div className="w-full md:col-span-2">
+                    <label className="block text-sm font-medium text-gray-700">Correo:</label>
+                    <input
+                      type="text"
+                      name="correo"
+                      value={formData.correo}
+                      onChange={handleChange}
+                      className="bg-gray-300 mt-1 block w-full border border-gray-300 rounded-md p-1"
+                      onBlur={() => {
+                        // Guardar en localStorage solo cuando el usuario termine de escribir el correo
+                        localStorage.setItem('formData', JSON.stringify(formData));
+                      }}
+                    />
+                  </div>
+                </div>
 
 
-            {/* Tabla */}
-            <ItemsTable salidas={salidas} />
-            <Summary venta={venta}/>
+                {/* Tabla */}
+                <ItemsTable salidas={salidas} />
+                <Summary venta={venta}/>
+              </>
+            )} 
 
-            <button 
-              className="w-full bg-[#365326] text-white px-4 py-2 mt-4 hover:bg-[#3e662a] rounded-3xl uppercase"
-              type="button"
-              onClick={() => handleGenerateFactura(
-                formData, 
-                setIsLoading, 
-                setFormData, 
-                setPdf, 
-                setXml, 
-                setIsInvoiceGenerated
-              )}
-              disabled={isLoading}
-            >
-              {isLoading ? 'Cargando...' : 'Generar Factura'}
-            </button>
+            {/* Botón para Generar Factura */}
+            {!isInvoiceGenerated && (
+              <button 
+                className="w-full bg-[#365326] text-white px-4 py-2 mt-4 hover:bg-[#3e662a] rounded-3xl uppercase"
+                type="button"
+                onClick={() => handleGenerateFactura(
+                  formData, 
+                  setIsLoading, 
+                  setFormData, 
+                  setPdf, 
+                  setXml, 
+                  setIsInvoiceGenerated
+                )}
+                disabled={isLoading}
+                style={{ display: isInvoiceGenerated ? 'none' : 'block' }} 
+              >
+                {isLoading ? 'Generando...' : 'Generar Factura'}
+              </button>
+            )}
           </div>
         )}
         <div>
