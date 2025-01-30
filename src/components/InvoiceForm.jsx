@@ -469,81 +469,112 @@ export const InvoiceForm = () => {
     }
   }, []);
 
-  const handleGenerateFactura = async ( e,formData, setIsLoading, setFormData, setPdf, setXml, setIsInvoiceGenerated ) => {
-
-    setIsLoading(true);
-
+  const handleGenerateFactura = async (formData, setIsLoading, setFormData, setPdf, setXml, setIsInvoiceGenerated) => {
     try {
+      // 1️⃣ **Activar el loader**
+      setIsLoading(true);
+  
+      // 2️⃣ **Obtener datos guardados en localStorage y combinarlos con el estado actual**
       const storedFormData = JSON.parse(localStorage.getItem('formData')) || {};
       const payload = { ...storedFormData, ...formData };
   
+      if (Object.keys(payload).length === 0) {
+        throw new Error('❌ No hay datos válidos para enviar a la API.');
+      }
+  
       console.log('🚀 Enviando a la API con los siguientes datos:', JSON.stringify(payload, null, 2));
   
-      // 1️⃣ 🔥 **Generar la factura**
-      // const response = await axios.post('https://www.binteapi.com:8085/src/cfdi40.php', storedFormData); 
+      // 3️⃣ **Llamar a la API para generar la factura**
       const response = await fetch('https://www.binteapi.com:8085/src/cfdi40.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
-
-      const data = await response.json();
-      console.log('✅ Respuesta API Factura:', data);
-
-      if (!data.path_pdf || !data.path_xml || !data.UUID) {
-        throw new Error('❌ Datos incompletos en la respuesta de la factura');
+  
+      // 4️⃣ **Verificar si la respuesta es válida antes de convertir a JSON**
+      if (!response.ok) {
+        throw new Error(`❌ Error en la API: ${response.status} - ${response.statusText}`);
       }
-
+  
+      let data;
+      try {
+        data = await response.json();
+      } catch (error) {
+        throw new Error('❌ La respuesta de la API no es un JSON válido.');
+      }
+  
+      console.log('✅ Respuesta API Factura:', data);
+  
+      // 5️⃣ **Validar respuesta**
+      if (!data.path_pdf || !data.path_xml || !data.UUID) {
+        throw new Error('❌ Datos incompletos en la respuesta de la factura.');
+      }
+  
+      // 6️⃣ **Guardar las URLs del PDF y XML**
       const pdfUrl = `https://sgp-web.nyc3.digitaloceanspaces.com/sgp-web/${data.path_pdf}`;
       const xmlUrl = `https://sgp-web.nyc3.digitaloceanspaces.com/sgp-web/${data.path_xml}`;
-  
+      
       setPdf(pdfUrl);
       setXml(xmlUrl);
-
-      const updatedFormData = { ...payload, path_pdf: data.path_pdf, path_xml: data.path_xml, UUID: data.UUID };
+  
+      // 7️⃣ **Actualizar los datos en localStorage**
+      const updatedFormData = { 
+        ...payload, 
+        path_pdf: data.path_pdf, 
+        path_xml: data.path_xml, 
+        UUID: data.UUID 
+      };
       localStorage.setItem('formData', JSON.stringify(updatedFormData));
-
-      // 2️⃣ 💾 **Guardar la factura en la base de datos**
-      const saveFacturaUrl = `https://binteapi.com:8095/api/factura/${storedFormData.sucursal}/${storedFormData.folioSucursalFinal}/`;
+  
+      // 8️⃣ **Guardar la factura en la base de datos**
+      const saveFacturaUrl = `https://binteapi.com:8095/api/factura/${payload.sucursal}/${payload.folioSucursalFinal}/`;
       const saveResponse = await fetch(saveFacturaUrl, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updatedFormData)
       });
-
-      const saveData = await saveResponse.json();
-      console.log('📤 Respuesta API de guardado:', saveData);
-
-      if (!saveResponse.ok) {
-        throw new Error('❌ Error al guardar la factura en la base de datos');
+  
+      let saveData;
+      try {
+        saveData = await saveResponse.json();
+      } catch (error) {
+        throw new Error('❌ Error al leer la respuesta de la API de guardado.');
       }
-
-      // Factura generada correctamente
+  
+      console.log('📤 Respuesta API de guardado:', saveData);
+  
+      if (!saveResponse.ok) {
+        throw new Error(`❌ Error al guardar la factura: ${saveData.message || 'Error desconocido'}`);
+      }
+  
+      // 9️⃣ **Factura generada correctamente**
       setIsInvoiceGenerated(true);
-
+      setIsLoading(false);
+  
       Swal.fire({
         title: '✅ Factura Generada',
         text: 'La factura ha sido generada y guardada correctamente',
-        icon: 'success', 
+        icon: 'success',
       });
-
+  
     } catch (error) {
       console.error('❌ Error en generación de factura:', error.message);
-
-      // 💥 SOLO mostrar alerta de error si la factura **realmente no se generó**
-      if (!isInvoiceGenerated) {
-        Swal.fire({
-          title: 'UPPPS!!',
-          text: error.message || 'Error al generar la factura',
-          icon: 'error',
-          iconColor: '#4782f6', 
+  
+      // 🔟 **Manejo de errores**
+      Swal.fire({
+        title: 'UPPPS!!',
+        text: error.message || 'Error al generar la factura',
+        icon: 'error',
         confirmButtonColor: '#007bff',
-        });
-      }
+      });
+  
     } finally {
+      // 1️⃣1️⃣ **Asegurar que el loader se oculta al finalizar**
       setIsLoading(false);
     }
   };
+  
+  
 
   // if (response.status === 200) {
       //   Swal.fire('Factura Generada', 'La factura se ha generado correctamente', 'success')
