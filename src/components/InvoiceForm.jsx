@@ -484,12 +484,24 @@ export const InvoiceForm = () => {
       console.log('✅ Respuesta API Factura:', data);
 
       if (data.code === 400) {
-        throw new Error(`❌ Error API: ${data.message || 'Error desconocido en la generación de la factura.'}`);
+        Swal.fire({
+            title: '❌ Error al generar la factura',
+            text: data.message || 'Ocurrió un error desconocido.',
+            icon: 'error',
+            confirmButtonColor: '#007bff',
+        });
+        throw new Error(data.message || 'Ocurrió un error en la generación de la factura.');
       }
   
       // 5️⃣ **Validar respuesta**
       if (!data.path_pdf || !data.path_xml || !data.UUID) {
-        throw new Error('❌ Datos incompletos en la respuesta de la factura.');
+        Swal.fire({
+            title: '❌ Datos incompletos',
+            text: data.message || 'La API no retornó los datos completos para generar la factura.',
+            icon: 'error',
+            confirmButtonColor: '#007bff',
+        });
+        throw new Error(data.message || 'Datos incompletos en la respuesta de la API.');
       }
   
       // 6️⃣ **Guardar las URLs del PDF y XML**
