@@ -511,8 +511,8 @@ export const InvoiceForm = () => {
       }
   
       // 6️⃣ **Guardar las URLs del PDF y XML**
-      const pdfUrl = `https://sgp-web.nyc3.digitaloceanspaces.com/sgp-web/${data.path_pdf}`;
-      const xmlUrl = `https://sgp-web.nyc3.digitaloceanspaces.com/sgp-web/${data.path_xml}`;
+      const pdfUrl = `https://sgp-web.nyc3.digitaloceanspaces.com/sgp-web/${formData.url_carpeta_facturacion}/${data.path_pdf}`;
+      const xmlUrl = `https://sgp-web.nyc3.digitaloceanspaces.com/sgp-web/${formData.url_carpeta_facturacion}/${data.path_xml}`;
       
       setPdf(pdfUrl);
       setXml(xmlUrl);
