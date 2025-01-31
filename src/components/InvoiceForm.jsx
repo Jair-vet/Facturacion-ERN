@@ -512,7 +512,10 @@ export const InvoiceForm = () => {
         setPdf(pdfUrl);
         setXml(xmlUrl);
 
-        const updatedFormData = { ...payload, path_pdf: data.path_pdf, path_xml: data.path_xml, UUID: data.UUID };
+        const savePathPDF = `${formData.url_carpeta_facturacion}/${data.path_pdf.split('/').pop()}`;
+        const savePathXML = `${formData.url_carpeta_facturacion}/${data.path_xml}`;
+
+        const updatedFormData = { ...payload, path_pdf: savePathPDF, path_xml: savePathXML, UUID: data.UUID };
         localStorage.setItem('formData', JSON.stringify(updatedFormData));
 
         // 8️⃣ **Guardar la factura en la base de datos**
